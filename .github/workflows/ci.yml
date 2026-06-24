@@ -36,8 +36,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run Flyway migrations
-        run: mysql -h 127.0.0.1 -P 3306 -u Voyager -ptestpass org_auth_test < scripts/create-test-database.sql
+      - name: Prepare test database
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot < scripts/create-test-database.sql
 
       - name: Test
         env:
