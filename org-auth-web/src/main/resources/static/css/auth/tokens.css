@@ -1,0 +1,38 @@
+:root {
+    --el-color-primary: #409eff;
+    --el-color-primary-light-3: #79bbff;
+    --el-color-primary-dark-2: #337ecc;
+    --el-color-success: #67c23a;
+    --el-color-warning: #e6a23c;
+    --el-color-danger: #f56c6c;
+    --el-color-info: #909399;
+
+    --auth-bg: #f0f2f5;
+    --auth-surface: #ffffff;
+    --auth-text: #303133;
+    --auth-text-secondary: #606266;
+    --auth-text-muted: #909399;
+    --auth-border: #dcdfe6;
+    --auth-radius-lg: 16px;
+    --auth-radius-md: 10px;
+    --auth-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    --auth-shadow-hover: 0 16px 40px rgba(64, 158, 255, 0.15);
+    --auth-gradient: linear-gradient(135deg, #1d4ed8 0%, #409eff 45%, #06b6d4 100%);
+    --auth-gradient-soft: linear-gradient(160deg, rgba(64, 158, 255, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+    --auth-font: "Segoe UI", "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    --auth-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --auth-bg: #111827;
+        --auth-surface: #1f2937;
+        --auth-text: #f3f4f6;
+        --auth-text-secondary: #d1d5db;
+        --auth-text-muted: #9ca3af;
+        --auth-border: #374151;
+        --auth-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        --auth-shadow-hover: 0 16px 48px rgba(64, 158, 255, 0.12);
+        --auth-gradient-soft: radial-gradient(ellipse at 70% 20%, rgba(64, 158, 255, 0.08) 0%, transparent 55%);
+    }
+}

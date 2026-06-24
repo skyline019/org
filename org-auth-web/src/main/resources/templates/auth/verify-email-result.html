@@ -1,14 +1,24 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{}, 'auth')}">
 <head>
     <title th:text="#{page.verify.result.title}">Email verification</title>
 </head>
 <body>
-<section>
-    <h1 th:text="#{page.verify.result.heading}">Email verification</h1>
-    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
-    <p class="auth-links"><a th:href="@{/login}" th:text="#{page.verify.result.login}">Go to sign in</a></p>
+<section th:fragment="content">
+    <div class="auth-card">
+        <div class="auth-panel auth-panel--auth">
+            <div th:class="${successMessage != null} ? 'status-icon status-icon--success' : 'status-icon status-icon--error'"
+                 aria-hidden="true"
+                 th:text="${successMessage != null} ? '✓' : '!'">✓</div>
+            <h1 class="auth-card__title" th:text="#{page.verify.result.heading}">Email verification</h1>
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+            <p class="auth-links">
+                <a th:href="@{/login}" th:text="#{page.verify.result.login}">Go to sign in</a>
+            </p>
+        </div>
+    </div>
 </section>
 </body>
 </html>

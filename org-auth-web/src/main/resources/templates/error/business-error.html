@@ -1,13 +1,21 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{}, 'auth')}">
 <head>
     <title th:text="#{page.error.title}">Operation failed</title>
 </head>
 <body>
-<section>
-    <h1 th:text="#{page.error.heading}">Operation failed</h1>
-    <div class="alert alert-error" th:text="${errorMessage}">Error</div>
-    <p class="auth-links"><a th:href="@{/}" th:text="#{page.error.home}">Back to home</a></p>
+<section th:fragment="content">
+    <div class="auth-card">
+        <div class="auth-panel auth-panel--auth">
+            <div class="status-icon status-icon--error" aria-hidden="true">!</div>
+            <h1 class="auth-card__title" th:text="#{page.error.heading}">Operation failed</h1>
+            <div class="alert alert-error" th:text="${errorMessage}">Error</div>
+            <p class="auth-links">
+                <a th:href="@{/}" th:text="#{page.error.home}">Back to home</a>
+            </p>
+        </div>
+    </div>
 </section>
 </body>
 </html>

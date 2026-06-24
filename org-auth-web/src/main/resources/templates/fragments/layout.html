@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
-      th:fragment="layout(title, content)">
+      th:fragment="layout(title, content, pageScripts, layoutMode)">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -17,21 +17,61 @@
             passwordMismatch: /*[[#{auth.register.mismatch}]]*/ ''
         };
     </script>
-    <script th:src="@{/js/auth-forms.js}" defer></script>
+    <script th:src="@{/js/auth/core.js}" defer></script>
+    <script th:src="@{/js/auth/forms.js}" defer></script>
+    <th:block th:replace="${pageScripts}"></th:block>
 </head>
-<body>
-<div class="container">
-    <header class="site-header">
-        <a th:href="@{/}" class="logo" th:text="#{page.app.name}">Org</a>
-        <nav class="site-nav" sec:authorize="isAuthenticated()">
-            <span sec:authentication="name" class="nav-user"></span>
+<body th:classappend="${layoutMode == 'app'} ? 'layout-app' : 'layout-auth'">
+
+<!-- App shell (home, dashboard) -->
+<div th:if="${layoutMode == 'app'}" class="app-shell">
+    <header class="app-header">
+        <a th:href="@{/}" class="app-header__logo" th:text="#{page.app.name}">Org</a>
+        <nav class="app-header__nav" sec:authorize="isAuthenticated()">
+            <span sec:authentication="name" class="app-header__user"></span>
             <form th:action="@{/logout}" method="post" class="inline-form">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn-link" th:text="#{page.nav.logout}">Log out</button>
             </form>
         </nav>
     </header>
-    <main th:replace="${content}">Content</main>
+    <main class="app-content">
+        <div class="app-page" th:insert="${content}"></div>
+    </main>
 </div>
+
+<!-- Auth split shell (login, register, verify, etc.) -->
+<div th:unless="${layoutMode == 'app'}" class="auth-shell">
+    <aside class="auth-brand" aria-hidden="false">
+        <div class="auth-brand__bg">
+            <div class="auth-brand__orb auth-brand__orb--1"></div>
+            <div class="auth-brand__orb auth-brand__orb--2"></div>
+            <div class="auth-brand__orb auth-brand__orb--3"></div>
+        </div>
+        <div class="auth-brand__content">
+            <a th:href="@{/login}" class="auth-brand__logo" th:text="#{page.app.name}">Org</a>
+            <p class="auth-brand__tagline" th:text="#{page.auth.tagline}">Secure authentication</p>
+            <ul class="auth-brand__features">
+                <li th:text="#{page.auth.feature1}">Feature 1</li>
+                <li th:text="#{page.auth.feature2}">Feature 2</li>
+                <li th:text="#{page.auth.feature3}">Feature 3</li>
+            </ul>
+        </div>
+    </aside>
+    <div class="auth-main">
+        <header class="auth-main__header auth-main__header--minimal" sec:authorize="isAuthenticated()">
+            <nav>
+                <form th:action="@{/logout}" method="post" class="inline-form">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn-link" th:text="#{page.nav.logout}">Log out</button>
+                </form>
+            </nav>
+        </header>
+        <main class="auth-main__body">
+            <div class="auth-main__center" th:insert="${content}"></div>
+        </main>
+    </div>
+</div>
+
 </body>
 </html>
