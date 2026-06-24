@@ -10,7 +10,8 @@ org/                         父 POM（JaCoCo 聚合、SpotBugs 门禁）
 ├── org-auth-web/            Controller、Security、Thymeleaf、OpenAPI
 ├── org-auth-starter/        Spring Boot 自动配置（对外嵌入入口）
 ├── org-app/                 可运行应用 + 全部集成/单元测试
-└── demo-business/           嵌入示例（OrgAuthSecurityCustomizer + /dashboard）
+├── demo-business/           嵌入示例（OrgAuthSecurityCustomizer + /dashboard）
+└── org-coverage/            JaCoCo 聚合报告与覆盖率门禁（无源码）
 ```
 
 依赖方向：`core ← web ← starter ← app / demo-business`。业务系统只需依赖 `org-auth-starter`，并实现 `OrgAuthSecurityCustomizer` 追加 URL 授权规则（见 [EXTENSION.md](EXTENSION.md)）。

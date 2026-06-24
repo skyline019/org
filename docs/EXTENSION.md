@@ -12,7 +12,7 @@
 </dependency>
 ```
 
-2. 实现 `OrgAuthSecurityCustomizer` 为业务 URL 追加授权规则（在 auth 默认规则之后执行）：
+2. 实现 `OrgAuthSecurityCustomizer`，在内置 `permitAll` 规则之后、`anyRequest().authenticated()` **之前**追加业务 URL 授权规则：
 
 ```java
 @Bean
@@ -28,6 +28,8 @@ app.auth.login-success-url=/dashboard
 ```
 
 4. 参考 `demo-business` 模块：`DemoBusinessApplication`、`DashboardController`、`DemoSecurityCustomizer`。
+
+> **数据库**：`demo-business` 默认 `spring.flyway.enabled=false`，开发时需先对目标库执行 Flyway（例如先启动 `org-app` 完成迁移），或自行启用 Flyway。
 
 ## 切换为 JWT API（思路）
 

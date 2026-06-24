@@ -31,12 +31,16 @@ class DemoBusinessApplicationTest {
     MockMvc mockMvc;
 
     @DynamicPropertySource
-    static void sharedLocalSecrets(DynamicPropertyRegistry registry) {
-        loadPropertiesFrom(findSharedDevLocalFile()).forEach((key, value) ->
-                registry.add(key.toString(), () -> value.toString()));
-        String envPassword = System.getenv("DB_PASSWORD");
-        if (envPassword != null && !envPassword.isBlank()) {
-            registry.add("spring.datasource.password", () -> envPassword);
+    static void testDatabase(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", () ->
+                "jdbc:mysql://localhost:3306/org_auth_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8");
+        String resolved = System.getenv("DB_PASSWORD");
+        if (resolved == null || resolved.isBlank()) {
+            resolved = loadPropertiesFrom(findSharedDevLocalFile()).getProperty("spring.datasource.password");
+        }
+        final String password = resolved;
+        if (password != null && !password.isBlank()) {
+            registry.add("spring.datasource.password", () -> password);
         }
     }
 

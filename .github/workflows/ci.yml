@@ -50,4 +50,4 @@ jobs:
         if: always()
         with:
           name: jacoco-report
-          path: target/site/jacoco-aggregate/
+          path: org-coverage/target/site/jacoco-aggregate/
