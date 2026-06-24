@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusions for Spring/JPA idioms that are safe in this codebase:
+  - Constructor injection of Spring-managed beans (repositories, services)
+  - JPA entity mutable collections exposed via getters/setters
+  - Java records returning component references
+-->
+<FindBugsFilter>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+</FindBugsFilter>

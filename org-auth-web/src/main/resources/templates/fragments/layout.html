@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Cache-Control" content="no-store"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="icon" href="data:,"/>
+    <title th:replace="${title}">Org Auth</title>
+    <link rel="stylesheet" th:href="@{/css/auth.css}"/>
+    <script th:inline="javascript">
+        window.authI18n = {
+            passwordMatch: /*[[#{auth.validation.confirm.match}]]*/ '',
+            passwordMismatch: /*[[#{auth.register.mismatch}]]*/ ''
+        };
+    </script>
+    <script th:src="@{/js/auth-forms.js}" defer></script>
+</head>
+<body>
+<div class="container">
+    <header class="site-header">
+        <a th:href="@{/}" class="logo" th:text="#{page.app.name}">Org</a>
+        <nav class="site-nav" sec:authorize="isAuthenticated()">
+            <span sec:authentication="name" class="nav-user"></span>
+            <form th:action="@{/logout}" method="post" class="inline-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="btn-link" th:text="#{page.nav.logout}">Log out</button>
+            </form>
+        </nav>
+    </header>
+    <main th:replace="${content}">Content</main>
+</div>
+</body>
+</html>

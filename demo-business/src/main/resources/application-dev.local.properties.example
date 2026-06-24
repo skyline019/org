@@ -1,0 +1,7 @@
+# 复制为 application-dev.local.properties（同目录，勿提交）
+# 可与 org-app 使用相同的数据库与 SMTP 凭据
+
+DB_PASSWORD=your_mysql_password
+MAIL_USERNAME=your_smtp_username
+MAIL_PASSWORD=your_smtp_password_or_app_token
+MAIL_FROM=your_from_address

@@ -1,0 +1,4 @@
+# 复制为 application-test.local.properties（勿提交）
+# 若已有 application-dev.local.properties 且含 DB_PASSWORD，通常无需此文件
+
+DB_PASSWORD=your_mysql_password

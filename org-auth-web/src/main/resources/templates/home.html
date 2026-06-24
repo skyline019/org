@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="#{page.home.title}">Home</title>
+</head>
+<body>
+<section>
+    <h1><span th:text="#{page.home.welcome}">Welcome,</span> <span sec:authentication="name">user</span></h1>
+    <p th:text="#{page.home.placeholder}">Placeholder</p>
+    <p sec:authorize="hasRole('USER')" class="text-muted" th:text="#{page.home.role('USER')}">Role</p>
+    <form th:action="@{/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-secondary" th:text="#{page.home.logout}">Log out</button>
+    </form>
+</section>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="#{page.dashboard.title}">Dashboard</title>
+</head>
+<body>
+<section>
+    <h1 th:text="#{page.dashboard.heading}">Business dashboard</h1>
+    <p th:text="#{page.dashboard.message}">You are logged in via org-auth-starter.</p>
+    <p><a th:href="@{/logout}" th:text="#{page.dashboard.logout}">Logout</a></p>
+</section>
+</body>
+</html>

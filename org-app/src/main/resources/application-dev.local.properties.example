@@ -1,0 +1,14 @@
+# 复制为 application-dev.local.properties（同目录，勿提交仓库）
+# Copy to application-dev.local.properties in the same directory (gitignored).
+
+DB_PASSWORD=your_mysql_password
+
+MAIL_USERNAME=your_smtp_username
+MAIL_PASSWORD=your_smtp_password_or_app_token
+MAIL_FROM=your_from_address
+
+# 可选 / optional
+# DB_USERNAME=Voyager
+# MAIL_HOST=smtp.example.com
+# MAIL_PORT=587
+# APP_BASE_URL=http://localhost:8080

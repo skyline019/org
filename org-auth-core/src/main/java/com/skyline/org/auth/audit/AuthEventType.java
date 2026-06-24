@@ -1,0 +1,13 @@
+package com.skyline.org.auth.audit;
+
+public enum AuthEventType {
+    LOGIN_SUCCESS,
+    LOGIN_FAILURE,
+    REGISTER,
+    EMAIL_VERIFIED,
+    RESEND_VERIFICATION,
+    PASSWORD_RESET_REQUEST,
+    PASSWORD_RESET,
+    ACCOUNT_LOCKED,
+    RATE_LIMITED
+}

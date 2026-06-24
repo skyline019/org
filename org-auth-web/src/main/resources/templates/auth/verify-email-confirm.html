@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="#{page.verify.confirm.title}">Confirm email verification</title>
+</head>
+<body>
+<section>
+    <h1 th:text="#{page.verify.confirm.heading}">Confirm email verification</h1>
+    <p th:text="#{page.verify.confirm.description}">Description</p>
+
+    <form th:action="@{/auth/verify-email}" method="post" class="auth-form">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="token" th:value="${token}"/>
+        <button type="submit" class="btn btn-primary" th:text="#{page.verify.confirm.submit}">Confirm verification</button>
+    </form>
+
+    <p class="auth-links"><a th:href="@{/login}" th:text="#{page.verify.confirm.back}">Back to sign in</a></p>
+</section>
+</body>
+</html>

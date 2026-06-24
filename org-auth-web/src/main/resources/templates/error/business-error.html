@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="#{page.error.title}">Operation failed</title>
+</head>
+<body>
+<section>
+    <h1 th:text="#{page.error.heading}">Operation failed</h1>
+    <div class="alert alert-error" th:text="${errorMessage}">Error</div>
+    <p class="auth-links"><a th:href="@{/}" th:text="#{page.error.home}">Back to home</a></p>
+</section>
+</body>
+</html>
