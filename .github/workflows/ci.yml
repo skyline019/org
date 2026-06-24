@@ -36,8 +36,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Prepare test database
-        run: mysql -h 127.0.0.1 -P 3306 -u root -proot < scripts/create-test-database.sql
+      # MySQL service 已通过 MYSQL_DATABASE / MYSQL_USER 创建 org_auth_test 与 Voyager；
+      # 表结构由测试启动时 FlywayMigrationConfig 迁移，无需额外 SQL 步骤。
 
       - name: Test
         env:
