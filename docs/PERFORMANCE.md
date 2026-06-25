@@ -6,7 +6,7 @@
 
 - **Endpoint:** `GET /api/v1/auth/check/username`
 - **Load:** 20 threads × 10 requests (200 samples)
-- **Gate:** p95 latency **< 800 ms** on CI hardware (MySQL Testcontainers / service)
+- **Gate:** p95 latency **< 800 ms** on CI hardware (GitHub Actions MySQL service)
 
 This is **not** a substitute for JMeter/Gatling at production scale. It guards against accidental regressions (missing indexes, synchronous blocking, etc.).
 

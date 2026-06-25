@@ -16,10 +16,12 @@ Never commit `application-dev.local.properties`, `.env`, or real passwords in SQ
 | Item | Configuration |
 |------|----------------|
 | User enumeration | `app.auth.check.enumeration-safe=true` |
-| Distributed rate limit | `spring.profiles.include=redis`, `app.auth.rate-limit.backend=redis` |
+| Distributed rate limit | `spring.profiles.active=prod` (activates `redis` via profile group), `app.auth.rate-limit.backend=redis` |
 | Trusted proxy IP | `app.trusted-proxy.enabled=true` behind nginx/ALB |
 | Forwarded headers | `server.forward-headers-strategy=framework` |
 | Secure session cookie | `server.servlet.session.cookie.secure=true` |
+| HSTS | Enabled on `prod` profile (`max-age=31536000; includeSubDomains`) |
+| Session idle timeout | `server.servlet.session.timeout=30m` |
 | CSP | Tight `default-src 'self'` (no unused CDN hosts) |
 | Swagger / OpenAPI | `springdoc.api-docs.enabled=false`, `springdoc.swagger-ui.enabled=false` (SecurityConfig also requires `ROLE_ADMIN` if re-enabled) |
 | Bootstrap admin | **Disabled in prod** (`@Profile("!prod")`); assign `ROLE_ADMIN` via SQL instead |
@@ -48,7 +50,9 @@ Memory and Redis backends both use token-bucket semantics. HTML form posts recei
 ## Session policy
 
 - Session fixation: `changeSessionId()`
-- Max concurrent sessions per user: **3** (oldest sessions invalidated)
+- Concurrent sessions: max **3** per user (oldest evicted)
+- Idle timeout: **30 minutes** (`server.servlet.session.timeout=30m`)
+- Cookie: `HttpOnly`, `SameSite=Lax` (dev/test); `Secure` in prod
 
 ## CSRF
 

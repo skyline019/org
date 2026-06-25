@@ -25,6 +25,7 @@
 - `REGISTER` / `EMAIL_VERIFIED` / `RESEND_VERIFICATION`
 - `PASSWORD_RESET_REQUEST` / `PASSWORD_RESET`
 - `ACCOUNT_LOCKED` / `RATE_LIMITED`
+- `ADMIN_USER_UPDATED`
 
 > Spring Boot 默认将 Counter 名 `auth.audit.events` 规范化为 `auth_audit_events_total`（取决于 registry 命名策略）。
 

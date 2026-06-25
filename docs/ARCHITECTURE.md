@@ -49,7 +49,9 @@ com.skyline.org
 | `ratelimit` | 可插拔限流后端（memory / redis） |
 | `repository` | 认证仓储 |
 | `schedule` | 定时清理过期数据 |
-| `security` | UserDetails、登录成功/失败 Handler |
+| `security` | UserDetails、登录成功/失败 Handler、OAuth2 用户绑定 |
+| `oauth` | OAuth 账户关联与 IdP 用户信息映射 |
+| `bootstrap` | 非 prod 环境可选 bootstrap 管理员 |
 | `service` | 业务编排（注册、验证、重置、校验） |
 | `validation` | 格式与强度校验规则 |
 
@@ -95,7 +97,7 @@ sequenceDiagram
 
 ## 4. 数据与迁移
 
-- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`
+- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）
 - **JPA**：`ddl-auto=validate`，表结构以 Flyway 为准
 - **FlywayMigrationConfig**：在 JPA `EntityManagerFactory` 之前执行迁移（故 `spring.flyway.enabled=false`）
 
@@ -105,7 +107,7 @@ sequenceDiagram
 |---------|------|
 | `dev` | 本地开发，完整 check 枚举、内存限流 |
 | `test` | 集成测试，`TestAsyncConfig` 同步邮件 |
-| `prod` | 环境变量注入、enumeration-safe、forward headers |
+| `prod` | 环境变量注入、enumeration-safe、forward headers；通过 profile group 自动激活 `redis` |
 | `redis` | 可选，`app.auth.rate-limit.backend=redis` |
 
 ## 6. 扩展点

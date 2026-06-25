@@ -39,21 +39,25 @@ app.auth.login-success-url=/dashboard
 
 ## 启用 OAuth2 社交登录
 
-1. 添加 `spring-boot-starter-oauth2-client`。
-2. 在 SecurityConfig 增加 `oauth2Login()`。
-3. 关联 OAuth 用户与本地 User（按 email 绑定或独立表）。
+OAuth2 客户端与 `oauth2Login()` 已内置在 `org-auth-web`（`SecurityConfig` + `OrgOAuth2UserService`）。启用步骤：
+
+1. 设置 `app.auth.oauth2.enabled=true` 并配置 IdP 客户端（见 `application-oauth2.properties.example`）。
+2. 确保 IdP 返回 **已验证邮箱**；`OAuthAccountService` 仅关联 verified email，拒绝 `@oauth.local` 合成邮箱。
+3. 生产环境在 IdP 控制台配置回调 URL：`{APP_BASE_URL}/login/oauth2/code/{registrationId}`。
 
 ## 启用 Redis 分布式限流
 
+生产 profile 已默认启用 Redis 限流。本地或 staging 可显式激活：
+
 ```properties
-spring.profiles.active=prod,redis
+spring.profiles.active=dev,redis
 app.auth.rate-limit.backend=redis
 spring.data.redis.host=${REDIS_HOST}
 ```
 
-取消 `application.properties` 中 Redis autoconfigure exclude（`application-redis.properties` 已示例）。
+`application-redis.properties` 会取消 `application.properties` 中的 Redis autoconfigure exclude。
 
-> **语义差异**：`memory` 后端使用 Bucket4j 令牌桶（平滑 refill）；`redis` 后端使用按分钟固定窗口计数。两者在 burst 行为上略有不同，多实例部署时以 Redis 为准。
+> **语义**：`memory` 与 `redis` 后端均使用 **令牌桶**（Redis 通过 Lua 脚本实现），多实例部署时以 Redis 为准。
 
 ## 国际化
 

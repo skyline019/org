@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,5 +53,15 @@ class SecurityConfigTest extends AbstractIntegrationTest {
     @Test
     void staticResourcesArePublic() throws Exception {
         mockMvc.perform(get("/css/auth.css")).andExpect(status().isOk());
+    }
+
+    @Test
+    void loginPageIncludesBaselineSecurityHeaders() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().doesNotExist("Strict-Transport-Security"))
+                .andExpect(header().exists("Content-Security-Policy"));
     }
 }
