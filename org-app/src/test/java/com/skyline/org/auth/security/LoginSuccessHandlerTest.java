@@ -72,4 +72,20 @@ class LoginSuccessHandlerTest {
         assertThat(session).isNotNull();
         assertThat(session.getAttribute("MFA_VERIFIED")).isEqualTo(Boolean.FALSE);
     }
+
+    @Test
+    void redirectsToMfaSetupWhenMandatoryEnrollmentRequired() throws Exception {
+        when(mfaService.requiresChallenge("admin")).thenReturn(false);
+        when(mfaService.requiresMandatoryEnrollment(
+                "admin",
+                java.util.List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .thenReturn(true);
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "admin", "secret", java.util.List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+
+        handler.onAuthenticationSuccess(request, response, authentication);
+
+        assertThat(response.getRedirectedUrl()).isEqualTo("/auth/mfa/setup");
+        verifyNoInteractions(authAuditService);
+    }
 }

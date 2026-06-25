@@ -292,6 +292,8 @@ public class AuthProperties {
     public static class Mfa {
         private boolean enabled = false;
         private String issuer = "Org Auth";
+        private java.util.List<String> enforceForRoles = new java.util.ArrayList<>();
+        private int recoveryCodeCount = 10;
 
         public boolean isEnabled() {
             return enabled;
@@ -307,6 +309,22 @@ public class AuthProperties {
 
         public void setIssuer(String issuer) {
             this.issuer = issuer;
+        }
+
+        public java.util.List<String> getEnforceForRoles() {
+            return enforceForRoles;
+        }
+
+        public void setEnforceForRoles(java.util.List<String> enforceForRoles) {
+            this.enforceForRoles = enforceForRoles;
+        }
+
+        public int getRecoveryCodeCount() {
+            return recoveryCodeCount;
+        }
+
+        public void setRecoveryCodeCount(int recoveryCodeCount) {
+            this.recoveryCodeCount = recoveryCodeCount;
         }
     }
 

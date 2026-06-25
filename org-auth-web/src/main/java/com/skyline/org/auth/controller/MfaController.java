@@ -3,6 +3,8 @@ package com.skyline.org.auth.controller;
 import com.skyline.org.auth.audit.AuthAuditService;
 import com.skyline.org.auth.audit.AuthEventType;
 import com.skyline.org.auth.config.AuthProperties;
+import com.skyline.org.auth.mfa.MfaEnrollmentResult;
+import com.skyline.org.auth.mfa.MfaRecoveryCodeService;
 import com.skyline.org.auth.mfa.MfaService;
 import com.skyline.org.auth.mfa.MfaSessionKeys;
 import com.skyline.org.auth.mfa.TotpMfaService;
@@ -79,8 +81,9 @@ public class MfaController {
         if (mfaService.verifyChallenge(username, code)) {
             HttpSession session = request.getSession(true);
             session.setAttribute(MfaSessionKeys.MFA_VERIFIED, Boolean.TRUE);
-            authAuditService.log(AuthEventType.MFA_CHALLENGE_SUCCESS, username, ip, null);
-            authAuditService.log(AuthEventType.LOGIN_SUCCESS, username, ip, "mfa");
+            String detail = MfaRecoveryCodeService.looksLikeRecoveryCode(code) ? "recovery" : null;
+            authAuditService.log(AuthEventType.MFA_CHALLENGE_SUCCESS, username, ip, detail);
+            authAuditService.log(AuthEventType.LOGIN_SUCCESS, username, ip, detail == null ? "mfa" : "mfa-recovery");
             redirectAttributes.addFlashAttribute("successMessage", msg("auth.mfa.challenge.success"));
             return "redirect:" + authProperties.getAuth().getLoginSuccessUrl();
         }
@@ -95,6 +98,7 @@ public class MfaController {
             return "redirect:/login";
         }
         String username = principal.getUsername();
+        model.addAttribute("mandatory", mfaService.requiresMandatoryEnrollment(username, principal.getAuthorities()));
         if (mfaService.isEnrolled(username)) {
             model.addAttribute("alreadyEnrolled", true);
             return "auth/mfa-setup";
@@ -118,15 +122,30 @@ public class MfaController {
         String username = principal.getUsername();
         String ip = clientIpResolver.resolve(request);
         try {
-            mfaService.confirmEnrollment(username, code);
+            MfaEnrollmentResult result = mfaService.confirmEnrollment(username, code);
             request.getSession(true).setAttribute(MfaSessionKeys.MFA_VERIFIED, Boolean.TRUE);
             authAuditService.log(AuthEventType.MFA_ENROLLED, username, ip, null);
+            redirectAttributes.addFlashAttribute("recoveryCodes", result.recoveryCodes());
             redirectAttributes.addFlashAttribute("successMessage", msg("auth.mfa.enroll.success"));
-            return "redirect:/home";
+            return "redirect:/auth/mfa/recovery-codes";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", msg("auth.mfa.challenge.error"));
             return "redirect:/auth/mfa/setup";
         }
+    }
+
+    @GetMapping("/recovery-codes")
+    public String recoveryCodesPage(
+            @AuthenticationPrincipal UserDetails principal,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        if (!model.containsAttribute("recoveryCodes")) {
+            return "redirect:/auth/mfa/setup";
+        }
+        return "auth/mfa-recovery-codes";
     }
 
     @PostMapping("/disable")
@@ -139,6 +158,10 @@ public class MfaController {
             return "redirect:/login";
         }
         String username = principal.getUsername();
+        if (mfaService.requiresMandatoryEnrollment(username, principal.getAuthorities())) {
+            redirectAttributes.addFlashAttribute("errorMessage", msg("auth.mfa.disable.forbidden"));
+            return "redirect:/auth/mfa/setup";
+        }
         if (!mfaService.verifyChallenge(username, code)) {
             redirectAttributes.addFlashAttribute("errorMessage", msg("auth.mfa.challenge.error"));
             return "redirect:/auth/mfa/setup";

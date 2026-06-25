@@ -26,7 +26,8 @@
             </div>
 
             <div th:unless="${alreadyEnrolled}">
-                <p class="auth-card__subtitle" th:text="#{page.mfa.setup.subtitle}">Scan the QR code with your authenticator app, then enter a code to confirm.</p>
+                <p class="auth-card__subtitle" th:if="${mandatory}" th:text="#{page.mfa.setup.mandatory}">MFA is required for your account role. Complete setup to continue.</p>
+                <p class="auth-card__subtitle" th:unless="${mandatory}" th:text="#{page.mfa.setup.subtitle}">Scan the QR code with your authenticator app, then enter a code to confirm.</p>
                 <div class="mfa-qr" th:if="${qrCodeDataUri}">
                     <img th:src="${qrCodeDataUri}" alt="MFA QR code" width="200" height="200"/>
                 </div>
@@ -44,7 +45,7 @@
                 </form>
             </div>
 
-            <p class="auth-links">
+            <p class="auth-links" th:unless="${mandatory}">
                 <a th:href="@{/home}" th:text="#{page.mfa.setup.back}">Back to home</a>
             </p>
         </div>

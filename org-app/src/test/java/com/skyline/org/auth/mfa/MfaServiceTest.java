@@ -26,6 +26,7 @@ class MfaServiceTest {
     @Mock UserTotpRepository userTotpRepository;
     @Mock UserService userService;
     @Mock TotpMfaService totpMfaService;
+    @Mock MfaRecoveryCodeService mfaRecoveryCodeService;
 
     AuthProperties authProperties;
     MfaService mfaService;
@@ -34,7 +35,7 @@ class MfaServiceTest {
     void setUp() {
         authProperties = new AuthProperties();
         authProperties.getAuth().getMfa().setEnabled(true);
-        mfaService = new MfaService(authProperties, userTotpRepository, userService, totpMfaService);
+        mfaService = new MfaService(authProperties, userTotpRepository, userService, totpMfaService, mfaRecoveryCodeService);
     }
 
     @Test
@@ -123,12 +124,15 @@ class MfaServiceTest {
         UserTotpCredential credential = new UserTotpCredential(user, "secret");
         when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(credential));
         when(totpMfaService.verifyCode("secret", "123456")).thenReturn(true);
+        when(userService.findByUsername("alice")).thenReturn(Optional.of(user));
+        when(mfaRecoveryCodeService.regenerateForUser(user)).thenReturn(java.util.List.of("ABCD-EFGH"));
 
-        mfaService.confirmEnrollment("alice", "123456");
+        MfaEnrollmentResult result = mfaService.confirmEnrollment("alice", "123456");
 
         ArgumentCaptor<UserTotpCredential> captor = ArgumentCaptor.forClass(UserTotpCredential.class);
         verify(userTotpRepository).save(captor.capture());
         assertThat(captor.getValue().isEnabled()).isTrue();
+        assertThat(result.recoveryCodes()).containsExactly("ABCD-EFGH");
     }
 
     @Test
@@ -167,5 +171,34 @@ class MfaServiceTest {
         when(totpMfaService.verifyCode("secret", "654321")).thenReturn(true);
 
         assertThat(mfaService.verifyChallenge("alice", "654321")).isTrue();
+    }
+
+    @Test
+    void requiresMandatoryEnrollmentForConfiguredRole() {
+        authProperties.getAuth().getMfa().setEnforceForRoles(java.util.List.of("ROLE_ADMIN"));
+        when(userTotpRepository.findByUsername("admin")).thenReturn(Optional.empty());
+
+        assertThat(mfaService.requiresMandatoryEnrollment(
+                "admin",
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .isTrue();
+    }
+
+    @Test
+    void verifyChallengeAcceptsRecoveryCode() {
+        when(mfaRecoveryCodeService.tryConsume("alice", "ABCD-EFGH")).thenReturn(true);
+
+        assertThat(mfaService.verifyChallenge("alice", "ABCD-EFGH")).isTrue();
+    }
+
+    @Test
+    void disableClearsRecoveryCodes() {
+        UserTotpCredential credential = new UserTotpCredential(new User(), "secret");
+        credential.setEnabled(true);
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(credential));
+
+        mfaService.disable("alice");
+
+        verify(mfaRecoveryCodeService).deleteAllForUser("alice");
     }
 }

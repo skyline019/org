@@ -1,0 +1,10 @@
+# Enable MFA (TOTP) for production or staging.
+app.auth.mfa.enabled=true
+app.auth.mfa.issuer=Org Auth
+
+# Comma-separated Spring Security role names that must enroll MFA before using the app.
+# Example: ROLE_ADMIN
+app.auth.mfa.enforce-for-roles=ROLE_ADMIN
+
+# Number of one-time recovery codes generated on enrollment.
+app.auth.mfa.recovery-code-count=10

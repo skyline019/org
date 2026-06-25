@@ -38,6 +38,14 @@ class TotpMfaServiceTest {
     }
 
     @Test
+    void currentCodeForSecretIsAcceptedByVerifyCode() {
+        String secret = totpMfaService.generateSecret();
+        String code = totpMfaService.currentCodeForSecret(secret);
+
+        assertThat(totpMfaService.verifyCode(secret, code)).isTrue();
+    }
+
+    @Test
     void buildQrDataUriReturnsPngDataUri() throws Exception {
         String secret = totpMfaService.generateSecret();
 

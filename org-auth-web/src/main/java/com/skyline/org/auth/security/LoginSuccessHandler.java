@@ -55,6 +55,12 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             return;
         }
 
+        if (mfaService.requiresMandatoryEnrollment(username, authentication.getAuthorities())) {
+            request.getSession(true).setAttribute(MfaSessionKeys.MFA_VERIFIED, Boolean.FALSE);
+            getRedirectStrategy().sendRedirect(request, response, "/auth/mfa/setup");
+            return;
+        }
+
         request.getSession(true).setAttribute(MfaSessionKeys.MFA_VERIFIED, Boolean.TRUE);
         authAuditService.log(AuthEventType.LOGIN_SUCCESS, username, ip, null);
         super.onAuthenticationSuccess(request, response, authentication);

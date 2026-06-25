@@ -43,9 +43,12 @@ public class TotpMfaService {
         return codeVerifier.isValidCode(secret, code.trim());
     }
 
+    private static final int TIME_PERIOD_SECONDS = 30;
+
     public String currentCodeForSecret(String secret) {
         try {
-            return codeGenerator.generate(secret, timeProvider.getTime());
+            long counter = Math.floorDiv(timeProvider.getTime(), TIME_PERIOD_SECONDS);
+            return codeGenerator.generate(secret, counter);
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to generate TOTP code", ex);
         }

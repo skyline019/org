@@ -43,6 +43,11 @@ public class MfaEnforcementFilter extends OncePerRequestFilter {
         }
 
         String username = authentication.getName();
+        if (mfaService.requiresMandatoryEnrollment(username, authentication.getAuthorities())) {
+            response.sendRedirect(request.getContextPath() + "/auth/mfa/setup");
+            return;
+        }
+
         if (!mfaService.requiresChallenge(username)) {
             filterChain.doFilter(request, response);
             return;

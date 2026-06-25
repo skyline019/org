@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{}, 'auth')}">
+<head>
+    <title th:text="#{page.mfa.recovery.title}">Save your recovery codes</title>
+</head>
+<body>
+<section th:fragment="content">
+    <div class="auth-card">
+        <div class="auth-panel auth-panel--auth">
+            <h1 class="auth-card__title" th:text="#{page.mfa.recovery.heading}">Save your recovery codes</h1>
+            <p class="auth-card__subtitle" th:text="#{page.mfa.recovery.subtitle}">Store these codes in a safe place. Each code can be used once if you lose your authenticator.</p>
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+            <ul class="mfa-recovery-list" th:if="${recoveryCodes}">
+                <li th:each="recoveryCode : ${recoveryCodes}">
+                    <code th:text="${recoveryCode}">ABCD-EFGH</code>
+                </li>
+            </ul>
+
+            <p class="auth-links">
+                <a th:href="@{/home}" class="btn btn-primary" th:text="#{page.mfa.recovery.continue}">Continue to home</a>
+            </p>
+        </div>
+    </div>
+</section>
+</body>
+</html>

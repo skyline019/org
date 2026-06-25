@@ -105,7 +105,14 @@ app.auth.mfa.enabled=true
 app.auth.mfa.issuer=Your App Name
 ```
 
-Users enroll at `/auth/mfa/setup` (QR code + 6-digit TOTP). After enrollment, login redirects to `/auth/mfa/challenge` until the session attribute `MFA_VERIFIED` is set. Secrets are stored in `user_totp_credentials` (Flyway V5).
+Users enroll at `/auth/mfa/setup` (QR code + 6-digit TOTP). After enrollment, login redirects to `/auth/mfa/challenge` until the session attribute `MFA_VERIFIED` is set. Secrets are stored in `user_totp_credentials` (Flyway V5); one-time recovery codes in `user_mfa_recovery_codes` (V6).
+
+```properties
+app.auth.mfa.enforce-for-roles=ROLE_ADMIN
+app.auth.mfa.recovery-code-count=10
+```
+
+`enforce-for-roles` requires listed roles to complete MFA setup before accessing the app. Recovery codes can be used once on the challenge page if the authenticator is unavailable.
 
 Audit events: `MFA_ENROLLED`, `MFA_CHALLENGE_SUCCESS`, `MFA_CHALLENGE_FAILURE`. `LOGIN_SUCCESS` is deferred until MFA passes when MFA is required.
 
