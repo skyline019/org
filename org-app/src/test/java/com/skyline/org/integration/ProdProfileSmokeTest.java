@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.matchesPattern;
 
 @EnabledIf("com.skyline.org.testsupport.RedisAvailableCondition#isAvailable")
 @ActiveProfiles({"test", "prod", "redis"})
@@ -67,7 +68,8 @@ class ProdProfileSmokeTest extends RedisIntegrationSupport {
         // Spring Security emits HSTS only on secure (HTTPS) responses
         mockMvc.perform(get("/login").secure(true))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Strict-Transport-Security", "max-age=31536000; includeSubDomains"))
+                .andExpect(header().string("Strict-Transport-Security",
+                        matchesPattern("max-age=31536000\\s*;\\s*includeSubDomains")))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
                 .andExpect(header().string("Referrer-Policy", "no-referrer"))
                 .andExpect(header().exists("Content-Security-Policy"));
