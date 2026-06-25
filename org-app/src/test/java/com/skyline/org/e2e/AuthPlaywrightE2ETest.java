@@ -116,7 +116,7 @@ class AuthPlaywrightE2ETest extends MailIntegrationSupport {
             page.fill("#password", password);
             page.locator("button[type='submit']").click();
             page.waitForURL("**/home");
-            page.locator("form[action*='logout'] button").click();
+            page.locator("section.home-page form.inline-form button.btn-secondary").click();
             page.waitForURL("**/login?logout**");
             assertThat(page.url()).contains("/login");
             browser.close();
