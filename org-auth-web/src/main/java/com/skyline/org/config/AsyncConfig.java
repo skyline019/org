@@ -30,4 +30,22 @@ public class AsyncConfig {
     Executor mailTaskExecutorForTests() {
         return Executors.newSingleThreadExecutor();
     }
+
+    @Bean(name = "auditTaskExecutor")
+    @Profile("!test")
+    Executor auditTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("audit-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "auditTaskExecutor")
+    @Profile("test")
+    Executor auditTaskExecutorForTests() {
+        return Executors.newSingleThreadExecutor();
+    }
 }

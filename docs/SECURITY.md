@@ -79,10 +79,10 @@ Disable after first boot. Prefer assigning `ROLE_ADMIN` via SQL in production.
 
 ## OAuth2
 
-Enable optional social login:
+Enable optional social login (use profile group or activate `oauth2` alongside `prod`):
 
 ```properties
-spring.profiles.include=oauth2
+spring.profiles.active=prod,oauth2
 app.auth.oauth2.enabled=true
 ```
 
@@ -96,6 +96,19 @@ Copy `application-oauth2.properties.example` and set provider client IDs/secrets
 
 OAuth accounts are stored in `oauth_accounts`.
 
+## Multi-factor authentication (TOTP)
+
+Optional step-up authentication after password/OAuth login:
+
+```properties
+app.auth.mfa.enabled=true
+app.auth.mfa.issuer=Your App Name
+```
+
+Users enroll at `/auth/mfa/setup` (QR code + 6-digit TOTP). After enrollment, login redirects to `/auth/mfa/challenge` until the session attribute `MFA_VERIFIED` is set. Secrets are stored in `user_totp_credentials` (Flyway V5).
+
+Audit events: `MFA_ENROLLED`, `MFA_CHALLENGE_SUCCESS`, `MFA_CHALLENGE_FAILURE`. `LOGIN_SUCCESS` is deferred until MFA passes when MFA is required.
+
 ## Admin console
 
 - URL: `/admin/users` (requires `ROLE_ADMIN`)
@@ -108,7 +121,7 @@ Security events are written to:
 
 1. Logger **`AUTH_AUDIT`** (always)
 2. Micrometer counter `auth.audit.events` (always)
-3. Table **`auth_audit_events`** when `app.auth.audit.persist=true` (enabled in prod)
+3. Table **`auth_audit_events`** when `app.auth.audit.persist=true` (enabled in prod; writes are **async** via `auditTaskExecutor`)
 
 | Setting | Default (dev) | Production |
 |---------|---------------|------------|

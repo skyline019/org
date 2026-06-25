@@ -31,6 +31,7 @@ public class SecurityConfig {
     private final ObjectProvider<OrgOAuth2UserService> oauth2UserService;
     private final Environment environment;
     private final SessionRegistry sessionRegistry;
+    private final ObjectProvider<MfaEnforcementFilter> mfaEnforcementFilter;
 
     public SecurityConfig(
             CustomUserDetailsService userDetailsService,
@@ -40,7 +41,8 @@ public class SecurityConfig {
             ObjectProvider<List<OrgAuthSecurityCustomizer>> securityCustomizers,
             ObjectProvider<OrgOAuth2UserService> oauth2UserService,
             Environment environment,
-            SessionRegistry sessionRegistry) {
+            SessionRegistry sessionRegistry,
+            ObjectProvider<MfaEnforcementFilter> mfaEnforcementFilter) {
         this.userDetailsService = userDetailsService;
         this.loginSuccessHandler = loginSuccessHandler;
         this.loginFailureHandler = loginFailureHandler;
@@ -49,6 +51,7 @@ public class SecurityConfig {
         this.oauth2UserService = oauth2UserService;
         this.environment = environment;
         this.sessionRegistry = sessionRegistry;
+        this.mfaEnforcementFilter = mfaEnforcementFilter;
     }
 
     @Bean
@@ -131,6 +134,9 @@ public class SecurityConfig {
                     }
                 })
                 .addFilterBefore(rateLimitFilter, SecurityContextHolderFilter.class);
+
+        mfaEnforcementFilter.ifAvailable(filter ->
+                http.addFilterAfter(filter, SecurityContextHolderFilter.class));
 
         return http.build();
     }

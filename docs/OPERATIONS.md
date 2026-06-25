@@ -26,6 +26,7 @@
 - `PASSWORD_RESET_REQUEST` / `PASSWORD_RESET`
 - `ACCOUNT_LOCKED` / `RATE_LIMITED`
 - `ADMIN_USER_UPDATED`
+- `MFA_ENROLLED` / `MFA_CHALLENGE_SUCCESS` / `MFA_CHALLENGE_FAILURE`
 
 > Spring Boot 默认将 Counter 名 `auth.audit.events` 规范化为 `auth_audit_events_total`（取决于 registry 命名策略）。
 
@@ -44,7 +45,7 @@ increase(auth_audit_events_total{event="REGISTER"}[24h])
 
 ### 2.3 审计表查询（`auth_audit_events`）
 
-生产环境 `app.auth.audit.persist=true` 时，事件同步写入 MySQL：
+生产环境 `app.auth.audit.persist=true` 时，事件通过 `auditTaskExecutor` **异步**写入 MySQL（日志与 Counter 仍同步）：
 
 ```sql
 -- 最近 1 小时登录失败

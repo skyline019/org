@@ -134,6 +134,79 @@ class AuthPlaywrightE2ETest extends MailIntegrationSupport {
         }
     }
 
+    @Test
+    void registerVerifyAndLoginFlow() throws Exception {
+        String user = unique("reg");
+        String email = user + "@example.com";
+        String pass = "Str0ng!Pass";
+        GREEN_MAIL.purgeEmailFromAllMailboxes();
+
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            page.navigate(baseUrl() + "/register");
+            page.fill("#username", user);
+            page.fill("#email", email);
+            page.fill("#password", pass);
+            page.fill("#confirmPassword", pass);
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/auth/verify-email-pending**");
+
+            await().atMost(5, SECONDS).untilAsserted(() ->
+                    assertThat(GREEN_MAIL.getReceivedMessages()).isNotEmpty());
+            String body = GREEN_MAIL.getReceivedMessages()[GREEN_MAIL.getReceivedMessages().length - 1]
+                    .getContent().toString();
+            Matcher matcher = Pattern.compile("/auth/verify-email/([A-Za-z0-9_-]+)").matcher(body);
+            assertThat(matcher.find()).isTrue();
+
+            page.navigate(baseUrl() + "/auth/verify-email/" + matcher.group(1));
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/auth/verify-email**");
+
+            page.navigate(baseUrl() + "/login");
+            page.fill("#username", user);
+            page.fill("#password", pass);
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/home");
+            assertThat(page.url()).endsWith("/home");
+            browser.close();
+        }
+    }
+
+    @Test
+    void passwordResetViaEmailFlow() throws Exception {
+        GREEN_MAIL.purgeEmailFromAllMailboxes();
+        String newPassword = "NewStr0ng!Pass";
+
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            page.navigate(baseUrl() + "/auth/forgot-password");
+            page.fill("#email", username + "@example.com");
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/login**");
+
+            await().atMost(5, SECONDS).untilAsserted(() ->
+                    assertThat(GREEN_MAIL.getReceivedMessages()).isNotEmpty());
+            String body = GREEN_MAIL.getReceivedMessages()[0].getContent().toString();
+            Matcher matcher = Pattern.compile("/auth/reset-password/([A-Za-z0-9_-]+)").matcher(body);
+            assertThat(matcher.find()).isTrue();
+
+            page.navigate(baseUrl() + "/auth/reset-password/" + matcher.group(1));
+            page.fill("#password", newPassword);
+            page.fill("#confirmPassword", newPassword);
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/login**");
+
+            page.fill("#username", username);
+            page.fill("#password", newPassword);
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/home");
+            assertThat(page.url()).endsWith("/home");
+            browser.close();
+        }
+    }
+
     private String baseUrl() {
         return "http://localhost:" + port;
     }

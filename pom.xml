@@ -37,6 +37,9 @@
         <testcontainers.version>1.21.0</testcontainers.version>
         <springdoc.version>2.8.8</springdoc.version>
         <spotbugs.version>4.8.6.0</spotbugs.version>
+        <dependency-check.version>12.1.0</dependency-check.version>
+        <wiremock.version>3.10.0</wiremock.version>
+        <totp.version>1.7.1</totp.version>
     </properties>
 
     <dependencyManagement>
@@ -76,6 +79,19 @@
                         <threshold>Medium</threshold>
                         <failOnError>true</failOnError>
                         <excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs-exclude.xml</excludeFilterFile>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.version}</version>
+                    <configuration>
+                        <failBuildOnCVSS>7</failBuildOnCVSS>
+                        <skipProvidedScope>true</skipProvidedScope>
+                        <skipTestScope>true</skipTestScope>
+                        <suppressionFiles>
+                            <suppressionFile>${maven.multiModuleProjectDirectory}/config/dependency-check-suppressions.xml</suppressionFile>
+                        </suppressionFiles>
                     </configuration>
                 </plugin>
             </plugins>

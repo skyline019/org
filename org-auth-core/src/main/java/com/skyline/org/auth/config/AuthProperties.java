@@ -32,6 +32,7 @@ public class AuthProperties {
         private final Audit audit = new Audit();
         private final OAuth2 oauth2 = new OAuth2();
         private final BootstrapAdmin bootstrapAdmin = new BootstrapAdmin();
+        private final Mfa mfa = new Mfa();
 
         public OAuth2 getOauth2() {
             return oauth2;
@@ -71,6 +72,10 @@ public class AuthProperties {
 
         public void setLoginSuccessUrl(String loginSuccessUrl) {
             this.loginSuccessUrl = loginSuccessUrl;
+        }
+
+        public Mfa getMfa() {
+            return mfa;
         }
     }
 
@@ -281,6 +286,27 @@ public class AuthProperties {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+    }
+
+    public static class Mfa {
+        private boolean enabled = false;
+        private String issuer = "Org Auth";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public void setIssuer(String issuer) {
+            this.issuer = issuer;
         }
     }
 

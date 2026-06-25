@@ -97,7 +97,7 @@ sequenceDiagram
 
 ## 4. 数据与迁移
 
-- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）、`V4__auth_audit_log.sql`（安全审计落库）
+- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）、`V4__auth_audit_log.sql`（安全审计落库）、`V5__user_totp_mfa.sql`（TOTP 凭据）
 - **JPA**：`ddl-auto=validate`，表结构以 Flyway 为准
 - **FlywayMigrationConfig**：在 JPA `EntityManagerFactory` 之前执行迁移（故 `spring.flyway.enabled=false`）
 

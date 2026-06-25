@@ -86,6 +86,12 @@
             <version>1.49.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

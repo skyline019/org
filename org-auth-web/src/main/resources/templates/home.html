@@ -35,6 +35,9 @@
             <p sec:authorize="hasRole('ADMIN')">
                 <a th:href="@{/admin/users}" th:text="#{page.home.admin}">User management</a>
             </p>
+            <p th:if="${@environment.getProperty('app.auth.mfa.enabled') == 'true'}">
+                <a th:href="@{/auth/mfa/setup}" th:text="#{page.home.mfa}">Two-factor authentication settings</a>
+            </p>
             <form th:action="@{/logout}" method="post" class="inline-form">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn btn-secondary" th:text="#{page.home.logout}">Log out</button>
