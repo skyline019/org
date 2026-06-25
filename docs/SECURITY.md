@@ -104,4 +104,15 @@ OAuth accounts are stored in `oauth_accounts`.
 
 ## Audit
 
-Security events are written to logger **`AUTH_AUDIT`** and Micrometer counter `auth.audit.events`. They are **not** persisted to the database; forward logs to your SIEM in production.
+Security events are written to:
+
+1. Logger **`AUTH_AUDIT`** (always)
+2. Micrometer counter `auth.audit.events` (always)
+3. Table **`auth_audit_events`** when `app.auth.audit.persist=true` (enabled in prod)
+
+| Setting | Default (dev) | Production |
+|---------|---------------|------------|
+| `app.auth.audit.persist` | `false` | `true` |
+| `app.auth.audit.retention` | `90d` | `90d` |
+
+Stale rows are purged nightly by `AuthMaintenanceScheduler`. Forward `AUTH_AUDIT` logs to your SIEM for real-time alerting.

@@ -88,6 +88,16 @@
       "description": "Cache TTL for username and email availability checks."
     },
     {
+      "name": "app.auth.audit.persist",
+      "type": "java.lang.Boolean",
+      "description": "Persist security audit events to auth_audit_events table."
+    },
+    {
+      "name": "app.auth.audit.retention",
+      "type": "java.time.Duration",
+      "description": "Retention period for persisted audit events."
+    },
+    {
       "name": "app.auth.oauth2.enabled",
       "type": "java.lang.Boolean",
       "description": "Enable OAuth2 login providers."

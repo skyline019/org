@@ -1,6 +1,7 @@
 package com.skyline.org.auth.schedule;
 
 import com.skyline.org.auth.config.AuthProperties;
+import com.skyline.org.auth.repository.AuthAuditEventRepository;
 import com.skyline.org.auth.repository.EmailVerificationTokenRepository;
 import com.skyline.org.auth.repository.LoginAttemptRepository;
 import com.skyline.org.auth.repository.PasswordResetTokenRepository;
@@ -20,19 +21,23 @@ class AuthMaintenanceSchedulerTest {
         LoginAttemptRepository loginRepo = mock(LoginAttemptRepository.class);
         EmailVerificationTokenRepository emailRepo = mock(EmailVerificationTokenRepository.class);
         PasswordResetTokenRepository resetRepo = mock(PasswordResetTokenRepository.class);
+        AuthAuditEventRepository auditRepo = mock(AuthAuditEventRepository.class);
         when(loginRepo.deleteByAttemptedAtBefore(any())).thenReturn(1);
         when(emailRepo.deleteByExpiresAtBefore(any())).thenReturn(2);
         when(resetRepo.deleteByExpiresAtBefore(any())).thenReturn(3);
+        when(auditRepo.deleteByOccurredAtBefore(any())).thenReturn(4);
 
         AuthProperties props = new AuthProperties();
         props.getAuth().getMaintenance().setLoginAttemptRetention(Duration.ofDays(30));
         props.getAuth().getMaintenance().setExpiredTokenRetention(Duration.ofDays(7));
 
-        AuthMaintenanceScheduler scheduler = new AuthMaintenanceScheduler(loginRepo, emailRepo, resetRepo, props);
+        AuthMaintenanceScheduler scheduler = new AuthMaintenanceScheduler(
+                loginRepo, emailRepo, resetRepo, auditRepo, props);
         scheduler.purgeStaleData();
 
         verify(loginRepo).deleteByAttemptedAtBefore(any());
         verify(emailRepo).deleteByExpiresAtBefore(any());
         verify(resetRepo).deleteByExpiresAtBefore(any());
+        verify(auditRepo).deleteByOccurredAtBefore(any());
     }
 }

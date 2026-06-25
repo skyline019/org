@@ -1,6 +1,7 @@
 package com.skyline.org.auth.lock;
 
 import com.skyline.org.auth.audit.AuthAuditService;
+import com.skyline.org.auth.repository.AuthAuditEventRepository;
 import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.user.entity.User;
 import com.skyline.org.user.service.UserService;
@@ -25,7 +26,7 @@ class AccountLockServiceTest {
         userService = mock(UserService.class);
         AuthProperties props = new AuthProperties();
         props.getAuth().getLock().setMaxAttempts(3);
-        AuthAuditService audit = new AuthAuditService(new SimpleMeterRegistry());
+        AuthAuditService audit = new AuthAuditService(props, mock(AuthAuditEventRepository.class), new SimpleMeterRegistry());
         accountLockService = new AccountLockService(userService, props, audit);
         user = new User();
         user.setUsername("alice");

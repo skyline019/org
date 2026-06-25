@@ -1,10 +1,14 @@
 package com.skyline.org.auth.audit;
 
+import com.skyline.org.auth.config.AuthProperties;
+import com.skyline.org.auth.entity.AuthAuditEvent;
+import com.skyline.org.auth.repository.AuthAuditEventRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -14,9 +18,16 @@ public class AuthAuditService {
 
     private static final Logger auditLog = LoggerFactory.getLogger("AUTH_AUDIT");
 
+    private final AuthProperties authProperties;
+    private final AuthAuditEventRepository auditEventRepository;
     private final Map<AuthEventType, Counter> eventCounters;
 
-    public AuthAuditService(MeterRegistry meterRegistry) {
+    public AuthAuditService(
+            AuthProperties authProperties,
+            AuthAuditEventRepository auditEventRepository,
+            MeterRegistry meterRegistry) {
+        this.authProperties = authProperties;
+        this.auditEventRepository = auditEventRepository;
         Map<AuthEventType, Counter> counters = new EnumMap<>(AuthEventType.class);
         for (AuthEventType type : AuthEventType.values()) {
             counters.put(type, Counter.builder("auth.audit.events")
@@ -27,10 +38,14 @@ public class AuthAuditService {
         this.eventCounters = Map.copyOf(counters);
     }
 
+    @Transactional
     public void log(AuthEventType event, String subject, String clientIp, String detail) {
         auditLog.info("event={} subject={} ip={} detail={}",
                 event.name(), nullToDash(subject), nullToDash(clientIp), nullToDash(detail));
         eventCounters.get(event).increment();
+        if (authProperties.getAuth().getAudit().isPersist()) {
+            auditEventRepository.save(new AuthAuditEvent(event, subject, clientIp, detail));
+        }
     }
 
     private static String nullToDash(String value) {

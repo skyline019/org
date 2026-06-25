@@ -1,6 +1,7 @@
 package com.skyline.org.auth.schedule;
 
 import com.skyline.org.auth.config.AuthProperties;
+import com.skyline.org.auth.repository.AuthAuditEventRepository;
 import com.skyline.org.auth.repository.EmailVerificationTokenRepository;
 import com.skyline.org.auth.repository.LoginAttemptRepository;
 import com.skyline.org.auth.repository.PasswordResetTokenRepository;
@@ -22,16 +23,19 @@ public class AuthMaintenanceScheduler {
     private final LoginAttemptRepository loginAttemptRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final AuthAuditEventRepository authAuditEventRepository;
     private final AuthProperties authProperties;
 
     public AuthMaintenanceScheduler(
             LoginAttemptRepository loginAttemptRepository,
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
+            AuthAuditEventRepository authAuditEventRepository,
             AuthProperties authProperties) {
         this.loginAttemptRepository = loginAttemptRepository;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.authAuditEventRepository = authAuditEventRepository;
         this.authProperties = authProperties;
     }
 
@@ -45,9 +49,12 @@ public class AuthMaintenanceScheduler {
         int emailTokensRemoved = emailVerificationTokenRepository.deleteByExpiresAtBefore(tokenCutoff);
         int resetTokensRemoved = passwordResetTokenRepository.deleteByExpiresAtBefore(tokenCutoff);
 
-        if (loginRemoved + emailTokensRemoved + resetTokensRemoved > 0) {
-            log.info("Auth maintenance: removed {} login attempts, {} email tokens, {} reset tokens",
-                    loginRemoved, emailTokensRemoved, resetTokensRemoved);
+        Instant auditCutoff = Instant.now().minus(authProperties.getAuth().getAudit().getRetention());
+        int auditRemoved = authAuditEventRepository.deleteByOccurredAtBefore(auditCutoff);
+
+        if (loginRemoved + emailTokensRemoved + resetTokensRemoved + auditRemoved > 0) {
+            log.info("Auth maintenance: removed {} login attempts, {} email tokens, {} reset tokens, {} audit events",
+                    loginRemoved, emailTokensRemoved, resetTokensRemoved, auditRemoved);
         }
     }
 }

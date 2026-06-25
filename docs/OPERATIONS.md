@@ -42,7 +42,27 @@ increase(auth_audit_events_total{event="RATE_LIMITED"}[1h])
 increase(auth_audit_events_total{event="REGISTER"}[24h])
 ```
 
-### 2.3 建议告警
+### 2.3 审计表查询（`auth_audit_events`）
+
+生产环境 `app.auth.audit.persist=true` 时，事件同步写入 MySQL：
+
+```sql
+-- 最近 1 小时登录失败
+SELECT occurred_at, subject, client_ip, detail
+FROM auth_audit_events
+WHERE event_type = 'LOGIN_FAILURE'
+  AND occurred_at > NOW() - INTERVAL 1 HOUR
+ORDER BY occurred_at DESC;
+
+-- 某用户的审计轨迹
+SELECT event_type, occurred_at, client_ip, detail
+FROM auth_audit_events
+WHERE subject = 'alice'
+ORDER BY occurred_at DESC
+LIMIT 50;
+```
+
+### 2.4 建议告警
 
 | 告警 | 条件 | 说明 |
 |------|------|------|

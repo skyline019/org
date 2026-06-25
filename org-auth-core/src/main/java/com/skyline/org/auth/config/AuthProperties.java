@@ -29,6 +29,7 @@ public class AuthProperties {
         private final RateLimit rateLimit = new RateLimit();
         private final Maintenance maintenance = new Maintenance();
         private final Check check = new Check();
+        private final Audit audit = new Audit();
         private final OAuth2 oauth2 = new OAuth2();
         private final BootstrapAdmin bootstrapAdmin = new BootstrapAdmin();
 
@@ -58,6 +59,10 @@ public class AuthProperties {
 
         public Check getCheck() {
             return check;
+        }
+
+        public Audit getAudit() {
+            return audit;
         }
 
         public String getLoginSuccessUrl() {
@@ -195,6 +200,27 @@ public class AuthProperties {
 
         public void setAvailabilityCacheTtl(Duration availabilityCacheTtl) {
             this.availabilityCacheTtl = availabilityCacheTtl;
+        }
+    }
+
+    public static class Audit {
+        private boolean persist = false;
+        private Duration retention = Duration.ofDays(90);
+
+        public boolean isPersist() {
+            return persist;
+        }
+
+        public void setPersist(boolean persist) {
+            this.persist = persist;
+        }
+
+        public Duration getRetention() {
+            return retention;
+        }
+
+        public void setRetention(Duration retention) {
+            this.retention = retention;
         }
     }
 

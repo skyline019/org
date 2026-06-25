@@ -43,7 +43,7 @@ com.skyline.org
 | `config` | SecurityFilterChain、限流 Filter、AuthProperties |
 | `controller` | Thymeleaf 页面 + REST API（v1） |
 | `dto` | 请求/响应模型 |
-| `entity` | 认证相关 JPA 实体（Token、LoginAttempt） |
+| `entity` | 认证相关 JPA 实体（Token、LoginAttempt、AuthAuditEvent） |
 | `event` | 域事件（验证/重置邮件） |
 | `lock` | 账户锁定策略 |
 | `ratelimit` | 可插拔限流后端（memory / redis） |
@@ -97,7 +97,7 @@ sequenceDiagram
 
 ## 4. 数据与迁移
 
-- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）
+- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）、`V4__auth_audit_log.sql`（安全审计落库）
 - **JPA**：`ddl-auto=validate`，表结构以 Flyway 为准
 - **FlywayMigrationConfig**：在 JPA `EntityManagerFactory` 之前执行迁移（故 `spring.flyway.enabled=false`）
 
@@ -118,6 +118,6 @@ sequenceDiagram
 | OAuth2 / JWT | 新增 `security` 配置链，保留现有 User 域 |
 | 自定义角色 | 扩展 `RoleService` + Security 表达式 |
 | 分布式限流 | 启用 `redis` profile（见 EXTENSION.md 语义说明） |
-| 审计落库 | 订阅 `AuthAuditService` 或 AOP 包装 |
+| 审计落库 | `app.auth.audit.persist=true`；表 `auth_audit_events`（见 V4 迁移） |
 
 详见 [EXTENSION.md](EXTENSION.md) 与 [SECURITY.md](SECURITY.md)。
