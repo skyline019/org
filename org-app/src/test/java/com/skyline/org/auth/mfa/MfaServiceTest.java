@@ -54,6 +54,68 @@ class MfaServiceTest {
     }
 
     @Test
+    void doesNotRequireChallengeWhenUserNotEnrolled() {
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.empty());
+
+        assertThat(mfaService.requiresChallenge("alice")).isFalse();
+    }
+
+    @Test
+    void doesNotRequireChallengeWhenCredentialDisabled() {
+        UserTotpCredential credential = new UserTotpCredential(new User(), "secret");
+        credential.setEnabled(false);
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(credential));
+
+        assertThat(mfaService.requiresChallenge("alice")).isFalse();
+    }
+
+    @Test
+    void isEnrolledReflectsEnabledCredential() {
+        UserTotpCredential credential = new UserTotpCredential(new User(), "secret");
+        credential.setEnabled(true);
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(credential));
+        when(userTotpRepository.findByUsername("bob")).thenReturn(Optional.empty());
+
+        assertThat(mfaService.isEnrolled("alice")).isTrue();
+        assertThat(mfaService.isEnrolled("bob")).isFalse();
+    }
+
+    @Test
+    void verifyChallengeReturnsFalseWhenNotEnrolled() {
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.empty());
+
+        assertThat(mfaService.verifyChallenge("alice", "123456")).isFalse();
+    }
+
+    @Test
+    void disableTurnsOffStoredCredential() {
+        UserTotpCredential credential = new UserTotpCredential(new User(), "secret");
+        credential.setEnabled(true);
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(credential));
+
+        mfaService.disable("alice");
+
+        assertThat(credential.isEnabled()).isFalse();
+        verify(userTotpRepository).save(credential);
+    }
+
+    @Test
+    void beginEnrollmentUpdatesExistingCredential() {
+        User user = new User();
+        user.setId(7L);
+        user.setUsername("alice");
+        UserTotpCredential existing = new UserTotpCredential(user, "OLDSECRET");
+        when(userService.findByUsername("alice")).thenReturn(Optional.of(user));
+        when(totpMfaService.generateSecret()).thenReturn("NEWSECRET");
+        when(userTotpRepository.findByUsername("alice")).thenReturn(Optional.of(existing));
+        when(userTotpRepository.save(existing)).thenReturn(existing);
+
+        assertThat(mfaService.beginEnrollment("alice")).isEqualTo("NEWSECRET");
+        assertThat(existing.getSecret()).isEqualTo("NEWSECRET");
+        assertThat(existing.isEnabled()).isFalse();
+    }
+
+    @Test
     void confirmEnrollmentVerifiesCodeBeforeEnabling() {
         User user = new User();
         user.setId(1L);

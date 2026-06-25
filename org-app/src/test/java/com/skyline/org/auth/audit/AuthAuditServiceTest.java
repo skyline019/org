@@ -18,16 +18,6 @@ class AuthAuditServiceTest {
     @Mock AuthAuditPersistenceService auditPersistenceService;
 
     @Test
-    void incrementsCounterOnLog() {
-        AuthProperties properties = new AuthProperties();
-        SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        AuthAuditService service = new AuthAuditService(properties, auditPersistenceService, registry);
-        service.log(AuthEventType.LOGIN_SUCCESS, "alice", "127.0.0.1", null);
-        assertThat(registry.find("auth.audit.events").tag("event", "LOGIN_SUCCESS").counter().count()).isEqualTo(1.0);
-        verifyNoInteractions(auditPersistenceService);
-    }
-
-    @Test
     void persistsWhenEnabled() {
         AuthProperties properties = new AuthProperties();
         properties.getAuth().getAudit().setPersist(true);
@@ -43,5 +33,27 @@ class AuthAuditServiceTest {
                 org.mockito.ArgumentMatchers.eq("203.0.113.1"),
                 org.mockito.ArgumentMatchers.eq("BadCredentials"));
         assertThat(eventCaptor.getValue()).isEqualTo(AuthEventType.LOGIN_FAILURE);
+    }
+
+    @Test
+    void incrementsCounterOnLog() {
+        AuthProperties properties = new AuthProperties();
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AuthAuditService service = new AuthAuditService(properties, auditPersistenceService, registry);
+        service.log(AuthEventType.LOGIN_SUCCESS, "alice", "127.0.0.1", null);
+        assertThat(registry.find("auth.audit.events").tag("event", "LOGIN_SUCCESS").counter().count()).isEqualTo(1.0);
+        verifyNoInteractions(auditPersistenceService);
+    }
+
+    @Test
+    void normalizesBlankAuditFields() {
+        AuthProperties properties = new AuthProperties();
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        AuthAuditService service = new AuthAuditService(properties, auditPersistenceService, registry);
+
+        service.log(AuthEventType.RATE_LIMITED, " ", null, "");
+
+        assertThat(registry.find("auth.audit.events").tag("event", "RATE_LIMITED").counter().count()).isEqualTo(1.0);
+        verifyNoInteractions(auditPersistenceService);
     }
 }
