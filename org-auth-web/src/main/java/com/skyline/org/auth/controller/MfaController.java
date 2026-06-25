@@ -158,7 +158,7 @@ public class MfaController {
             return "redirect:/login";
         }
         String username = principal.getUsername();
-        if (mfaService.requiresMandatoryEnrollment(username, principal.getAuthorities())) {
+        if (mfaService.hasMandatoryMfaRole(principal.getAuthorities())) {
             redirectAttributes.addFlashAttribute("errorMessage", msg("auth.mfa.disable.forbidden"));
             return "redirect:/auth/mfa/setup";
         }

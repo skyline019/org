@@ -1,14 +1,11 @@
 package com.skyline.org.integration;
 
 import com.skyline.org.auth.dto.RegisterRequest;
-import com.skyline.org.auth.entity.UserTotpCredential;
+import com.skyline.org.auth.mfa.MfaService;
 import com.skyline.org.auth.mfa.TotpMfaService;
-import com.skyline.org.auth.repository.UserTotpRepository;
 import com.skyline.org.auth.service.EmailVerificationService;
 import com.skyline.org.auth.service.RegistrationService;
 import com.skyline.org.testsupport.MailIntegrationSupport;
-import com.skyline.org.user.entity.User;
-import com.skyline.org.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +14,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,22 +32,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class MfaMvcIntegrationTest extends MailIntegrationSupport {
 
+    private static final String TEST_ENCRYPTION_KEY = Base64.getEncoder().encodeToString(new byte[32]);
+
     @Autowired MockMvc mockMvc;
     @Autowired RegistrationService registrationService;
     @Autowired EmailVerificationService emailVerificationService;
     @Autowired TotpMfaService totpMfaService;
-    @Autowired UserTotpRepository userTotpRepository;
-    @Autowired UserService userService;
-    @Autowired com.skyline.org.auth.mfa.MfaService mfaService;
+    @Autowired MfaService mfaService;
 
     private String username;
     private String password;
-    private String secret;
 
     @DynamicPropertySource
     static void enableMfa(DynamicPropertyRegistry registry) {
         registry.add("app.auth.mfa.enabled", () -> "true");
         registry.add("spring.session.store-type", () -> "none");
+        registry.add("app.auth.mfa.secret-encryption.mode", () -> "local");
+        registry.add("app.auth.mfa.secret-encryption.local-key", () -> TEST_ENCRYPTION_KEY);
     }
 
     @BeforeEach
@@ -70,11 +68,8 @@ class MfaMvcIntegrationTest extends MailIntegrationSupport {
         assertThat(matcher.find()).isTrue();
         emailVerificationService.verifyEmail(matcher.group(1));
 
-        secret = totpMfaService.generateSecret();
-        User user = userService.findByUsername(username).orElseThrow();
-        UserTotpCredential credential = new UserTotpCredential(user, secret);
-        credential.setEnabled(true);
-        userTotpRepository.saveAndFlush(credential);
+        String plainSecret = mfaService.beginEnrollment(username);
+        mfaService.confirmEnrollment(username, totpMfaService.currentCodeForSecret(plainSecret));
     }
 
     @Test
@@ -88,34 +83,15 @@ class MfaMvcIntegrationTest extends MailIntegrationSupport {
     }
 
     @Test
-    void serviceLevelEnrollmentIssuesRecoveryCodes() {
-        String freshUser = unique("svc");
-        RegisterRequest request = new RegisterRequest();
-        request.setUsername(freshUser);
-        request.setEmail(freshUser + "@example.com");
-        request.setPassword(password);
-        request.setConfirmPassword(password);
-        registrationService.register(request);
-
-        String secret = mfaService.beginEnrollment(freshUser);
-        var result = mfaService.confirmEnrollment(
-                freshUser,
-                totpMfaService.currentCodeForSecret(secret));
-
-        assertThat(result.recoveryCodes()).hasSize(10);
-        assertThat(mfaService.isEnrolled(freshUser)).isTrue();
-    }
-
-    @Test
     void challengeWithValidTotpGrantsAccessToHome() throws Exception {
-        String storedSecret = userTotpRepository.findByUsername(username).orElseThrow().getSecret();
+        String plainSecret = mfaService.resolvePlainSecret(username);
         MockHttpSession session = new MockHttpSession();
 
         mockMvc.perform(post("/auth/mfa/challenge")
                         .with(user(username))
                         .session(session)
                         .with(csrf())
-                        .param("code", totpMfaService.currentCodeForSecret(storedSecret)))
+                        .param("code", totpMfaService.currentCodeForSecret(plainSecret)))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/home"));
     }
@@ -136,12 +112,10 @@ class MfaMvcIntegrationTest extends MailIntegrationSupport {
         assertThat(matcher.find()).isTrue();
         emailVerificationService.verifyEmail(matcher.group(1));
 
-        MvcResult setup = mockMvc.perform(get("/auth/mfa/setup").with(user(freshUser)))
-                .andExpect(status().isOk())
-                .andReturn();
-        Matcher secretMatcher = Pattern.compile("<code>([A-Z2-7=]+)</code>").matcher(setup.getResponse().getContentAsString());
-        assertThat(secretMatcher.find()).isTrue();
-        String storedSecret = userTotpRepository.findByUsername(freshUser).orElseThrow().getSecret();
+        mockMvc.perform(get("/auth/mfa/setup").with(user(freshUser)))
+                .andExpect(status().isOk());
+
+        String storedSecret = mfaService.resolvePlainSecret(freshUser);
 
         mockMvc.perform(post("/auth/mfa/enable")
                         .with(user(freshUser))

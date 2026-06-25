@@ -41,6 +41,8 @@ class ProdProfileSmokeTest extends RedisIntegrationSupport {
         registry.add("MAIL_USERNAME", () -> "smtp-user");
         registry.add("MAIL_PASSWORD", () -> "smtp-pass");
         registry.add("MAIL_FROM", () -> "noreply@example.com");
+        registry.add("MFA_SECRET_ENCRYPTION_KEY", () ->
+                java.util.Base64.getEncoder().encodeToString(new byte[32]));
     }
 
     @Test

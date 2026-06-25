@@ -76,7 +76,7 @@ mysql -u root -p < scripts/create-test-database.sql
 .\mvnw.cmd verify
 ```
 
-JaCoCo 聚合报告：`org-coverage/target/site/jacoco-aggregate/index.html`（根目录 `verify` 要求 `com.skyline.org` 指令覆盖率 ≥ 80%、分支覆盖率 ≥ 63%，含 SpotBugs 静态分析与 OWASP dependency-check；与 CI 一致）
+JaCoCo 聚合报告：`org-coverage/target/site/jacoco-aggregate/index.html`（根目录 `verify` 要求 `com.skyline.org` 指令覆盖率 ≥ 80%、分支覆盖率 ≥ 65%，含 SpotBugs 静态分析与 OWASP dependency-check；与 CI 一致）
 
 **CI 测试环境**：GitHub Actions 通过 `docker-compose.ci.yml` 启动 MySQL + Redis（仅 CI 使用，本地开发无需 Docker）。
 

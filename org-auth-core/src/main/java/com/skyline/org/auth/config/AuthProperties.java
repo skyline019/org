@@ -294,6 +294,7 @@ public class AuthProperties {
         private String issuer = "Org Auth";
         private java.util.List<String> enforceForRoles = new java.util.ArrayList<>();
         private int recoveryCodeCount = 10;
+        private final SecretEncryption secretEncryption = new SecretEncryption();
 
         public boolean isEnabled() {
             return enabled;
@@ -325,6 +326,43 @@ public class AuthProperties {
 
         public void setRecoveryCodeCount(int recoveryCodeCount) {
             this.recoveryCodeCount = recoveryCodeCount;
+        }
+
+        public SecretEncryption getSecretEncryption() {
+            return secretEncryption;
+        }
+
+        public static class SecretEncryption {
+            /** none | local | kms (local master key envelope; swap KmsSecretEncryptionClient bean for cloud KMS) */
+            private String mode = "none";
+            /** Base64-encoded 256-bit AES key for local/kms envelope mode */
+            private String localKey;
+            /** Logical KMS key id / alias (metadata for external KMS implementations) */
+            private String kmsKeyId;
+
+            public String getMode() {
+                return mode;
+            }
+
+            public void setMode(String mode) {
+                this.mode = mode;
+            }
+
+            public String getLocalKey() {
+                return localKey;
+            }
+
+            public void setLocalKey(String localKey) {
+                this.localKey = localKey;
+            }
+
+            public String getKmsKeyId() {
+                return kmsKeyId;
+            }
+
+            public void setKmsKeyId(String kmsKeyId) {
+                this.kmsKeyId = kmsKeyId;
+            }
         }
     }
 

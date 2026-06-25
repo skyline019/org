@@ -114,6 +114,8 @@ app.auth.mfa.recovery-code-count=10
 
 `enforce-for-roles` requires listed roles to complete MFA setup before accessing the app. Recovery codes can be used once on the challenge page if the authenticator is unavailable.
 
+TOTP secrets are encrypted at rest when `app.auth.mfa.secret-encryption.mode=local` (AES-256-GCM). Provide a 32-byte key as Base64 via `MFA_SECRET_ENCRYPTION_KEY`. Legacy plaintext secrets are still readable during migration. Production profile enables this by default; dev/test can use `mode=none`.
+
 Audit events: `MFA_ENROLLED`, `MFA_CHALLENGE_SUCCESS`, `MFA_CHALLENGE_FAILURE`. `LOGIN_SUCCESS` is deferred until MFA passes when MFA is required.
 
 ## Admin console

@@ -2,6 +2,7 @@ package com.skyline.org.auth.mfa;
 
 import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.auth.entity.UserTotpCredential;
+import com.skyline.org.auth.mfa.crypto.TotpSecretCryptoService;
 import com.skyline.org.auth.repository.UserTotpRepository;
 import com.skyline.org.user.entity.User;
 import com.skyline.org.user.service.UserService;
@@ -20,18 +21,21 @@ public class MfaService {
     private final UserService userService;
     private final TotpMfaService totpMfaService;
     private final MfaRecoveryCodeService mfaRecoveryCodeService;
+    private final TotpSecretCryptoService totpSecretCryptoService;
 
     public MfaService(
             AuthProperties authProperties,
             UserTotpRepository userTotpRepository,
             UserService userService,
             TotpMfaService totpMfaService,
-            MfaRecoveryCodeService mfaRecoveryCodeService) {
+            MfaRecoveryCodeService mfaRecoveryCodeService,
+            TotpSecretCryptoService totpSecretCryptoService) {
         this.authProperties = authProperties;
         this.userTotpRepository = userTotpRepository;
         this.userService = userService;
         this.totpMfaService = totpMfaService;
         this.mfaRecoveryCodeService = mfaRecoveryCodeService;
+        this.totpSecretCryptoService = totpSecretCryptoService;
     }
 
     public boolean isFeatureEnabled() {
@@ -50,7 +54,11 @@ public class MfaService {
     public boolean requiresMandatoryEnrollment(
             String username,
             Collection<? extends GrantedAuthority> authorities) {
-        if (!isFeatureEnabled() || isEnrolled(username)) {
+        return hasMandatoryMfaRole(authorities) && !isEnrolled(username);
+    }
+
+    public boolean hasMandatoryMfaRole(Collection<? extends GrantedAuthority> authorities) {
+        if (!isFeatureEnabled()) {
             return false;
         }
         var enforcedRoles = authProperties.getAuth().getMfa().getEnforceForRoles();
@@ -75,7 +83,7 @@ public class MfaService {
         String secret = totpMfaService.generateSecret();
         UserTotpCredential credential = userTotpRepository.findByUsername(username)
                 .orElseGet(() -> new UserTotpCredential(user, secret));
-        credential.setSecret(secret);
+        credential.setSecret(totpSecretCryptoService.seal(secret));
         credential.setEnabled(false);
         userTotpRepository.save(credential);
         return secret;
@@ -84,7 +92,7 @@ public class MfaService {
     @Transactional
     public MfaEnrollmentResult confirmEnrollment(String username, String code) {
         UserTotpCredential credential = requireCredential(username);
-        if (!totpMfaService.verifyCode(credential.getSecret(), code)) {
+        if (!totpMfaService.verifyCode(resolvePlainSecret(credential), code)) {
             throw new IllegalArgumentException("Invalid verification code");
         }
         credential.setEnabled(true);
@@ -99,8 +107,14 @@ public class MfaService {
         }
         return userTotpRepository.findByUsername(username)
                 .filter(UserTotpCredential::isEnabled)
-                .map(c -> totpMfaService.verifyCode(c.getSecret(), code))
+                .map(c -> totpMfaService.verifyCode(resolvePlainSecret(c), code))
                 .orElse(false);
+    }
+
+    public String resolvePlainSecret(String username) {
+        return userTotpRepository.findByUsername(username)
+                .map(this::resolvePlainSecret)
+                .orElseThrow(() -> new IllegalStateException("MFA enrollment not started"));
     }
 
     @Transactional
@@ -114,6 +128,10 @@ public class MfaService {
 
     public Optional<UserTotpCredential> findCredential(String username) {
         return userTotpRepository.findByUsername(username);
+    }
+
+    private String resolvePlainSecret(UserTotpCredential credential) {
+        return totpSecretCryptoService.unseal(credential.getSecret());
     }
 
     private UserTotpCredential requireCredential(String username) {

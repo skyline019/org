@@ -8,3 +8,10 @@ app.auth.mfa.enforce-for-roles=ROLE_ADMIN
 
 # Number of one-time recovery codes generated on enrollment.
 app.auth.mfa.recovery-code-count=10
+
+# TOTP secret encryption at rest (recommended for production).
+# mode: none | local (AES-256-GCM with a 32-byte Base64 key)
+app.auth.mfa.secret-encryption.mode=local
+app.auth.mfa.secret-encryption.local-key=${MFA_SECRET_ENCRYPTION_KEY}
+# Optional logical KMS key id for audit/logging when integrating cloud KMS later.
+app.auth.mfa.secret-encryption.kms-key-id=${MFA_KMS_KEY_ID:org-auth-totp}

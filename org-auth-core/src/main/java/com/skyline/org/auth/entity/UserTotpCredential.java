@@ -27,7 +27,7 @@ public class UserTotpCredential {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false, length = 64)
+    @Column(nullable = false, length = 512)
     private String secret;
 
     @Column(nullable = false)

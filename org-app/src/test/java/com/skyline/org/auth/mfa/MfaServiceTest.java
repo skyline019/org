@@ -2,6 +2,7 @@ package com.skyline.org.auth.mfa;
 
 import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.auth.entity.UserTotpCredential;
+import com.skyline.org.auth.mfa.crypto.TotpSecretCryptoService;
 import com.skyline.org.auth.repository.UserTotpRepository;
 import com.skyline.org.user.entity.User;
 import com.skyline.org.user.service.UserService;
@@ -17,6 +18,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +30,7 @@ class MfaServiceTest {
     @Mock UserService userService;
     @Mock TotpMfaService totpMfaService;
     @Mock MfaRecoveryCodeService mfaRecoveryCodeService;
+    @Mock TotpSecretCryptoService totpSecretCryptoService;
 
     AuthProperties authProperties;
     MfaService mfaService;
@@ -35,7 +39,18 @@ class MfaServiceTest {
     void setUp() {
         authProperties = new AuthProperties();
         authProperties.getAuth().getMfa().setEnabled(true);
-        mfaService = new MfaService(authProperties, userTotpRepository, userService, totpMfaService, mfaRecoveryCodeService);
+        lenient().when(totpSecretCryptoService.seal(anyString())).thenAnswer(inv -> "sealed:" + inv.getArgument(0));
+        lenient().when(totpSecretCryptoService.unseal(anyString())).thenAnswer(inv -> {
+            String value = inv.getArgument(0);
+            return value.startsWith("sealed:") ? value.substring("sealed:".length()) : value;
+        });
+        mfaService = new MfaService(
+                authProperties,
+                userTotpRepository,
+                userService,
+                totpMfaService,
+                mfaRecoveryCodeService,
+                totpSecretCryptoService);
     }
 
     @Test
@@ -112,7 +127,7 @@ class MfaServiceTest {
         when(userTotpRepository.save(existing)).thenReturn(existing);
 
         assertThat(mfaService.beginEnrollment("alice")).isEqualTo("NEWSECRET");
-        assertThat(existing.getSecret()).isEqualTo("NEWSECRET");
+        assertThat(existing.getSecret()).isEqualTo("sealed:NEWSECRET");
         assertThat(existing.isEnabled()).isFalse();
     }
 
@@ -171,6 +186,18 @@ class MfaServiceTest {
         when(totpMfaService.verifyCode("secret", "654321")).thenReturn(true);
 
         assertThat(mfaService.verifyChallenge("alice", "654321")).isTrue();
+    }
+
+    @Test
+    void hasMandatoryMfaRoleForConfiguredRole() {
+        authProperties.getAuth().getMfa().setEnforceForRoles(java.util.List.of("ROLE_ADMIN"));
+
+        assertThat(mfaService.hasMandatoryMfaRole(
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .isTrue();
+        assertThat(mfaService.hasMandatoryMfaRole(
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))))
+                .isFalse();
     }
 
     @Test

@@ -6,7 +6,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.skyline.org.auth.dto.RegisterRequest;
 import com.skyline.org.auth.mfa.TotpMfaService;
-import com.skyline.org.auth.repository.UserTotpRepository;
 import com.skyline.org.auth.service.EmailVerificationService;
 import com.skyline.org.auth.service.RegistrationService;
 import com.skyline.org.testsupport.MailIntegrationSupport;
@@ -19,6 +18,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,13 +30,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MfaPlaywrightE2ETest extends MailIntegrationSupport {
 
+    private static final String TEST_ENCRYPTION_KEY = Base64.getEncoder().encodeToString(new byte[32]);
+
     @LocalServerPort
     int port;
 
     @Autowired RegistrationService registrationService;
     @Autowired EmailVerificationService emailVerificationService;
     @Autowired TotpMfaService totpMfaService;
-    @Autowired UserTotpRepository userTotpRepository;
 
     private String username;
     private String password;
@@ -44,6 +45,8 @@ class MfaPlaywrightE2ETest extends MailIntegrationSupport {
     @DynamicPropertySource
     static void enableMfa(DynamicPropertyRegistry registry) {
         registry.add("app.auth.mfa.enabled", () -> "true");
+        registry.add("app.auth.mfa.secret-encryption.mode", () -> "local");
+        registry.add("app.auth.mfa.secret-encryption.local-key", () -> TEST_ENCRYPTION_KEY);
     }
 
     @BeforeEach
@@ -70,30 +73,14 @@ class MfaPlaywrightE2ETest extends MailIntegrationSupport {
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
             Page page = browser.newPage();
 
-            page.navigate(baseUrl() + "/login");
-            page.fill("#username", username);
-            page.fill("#password", password);
-            page.locator("button[type='submit']").click();
-            page.waitForURL("**/home");
-
-            page.navigate(baseUrl() + "/auth/mfa/setup");
-            page.waitForSelector(".mfa-secret code");
-            String secret = userTotpRepository.findByUsername(username).orElseThrow().getSecret();
-            page.fill("form[action$='/auth/mfa/enable'] #code", totpMfaService.currentCodeForSecret(secret));
-            page.locator("form[action$='/auth/mfa/enable'] button[type='submit']").click();
-            page.waitForURL("**/auth/mfa/recovery-codes**");
-            assertThat(page.locator(".mfa-recovery-list li").count()).isGreaterThan(0);
+            login(page);
+            String secret = enrollMfa(page);
 
             page.locator("a[href*='home']").click();
             page.waitForURL("**/home");
 
-            page.locator("section.home-page form.inline-form button.btn-secondary").click();
-            page.waitForURL("**/login**");
-
-            page.fill("#username", username);
-            page.fill("#password", password);
-            page.locator("button[type='submit']").click();
-            page.waitForURL("**/auth/mfa/challenge**");
+            logout(page);
+            loginExpectingChallenge(page);
 
             page.fill("form[action$='/auth/mfa/challenge'] #code", totpMfaService.currentCodeForSecret(secret));
             page.locator("form[action$='/auth/mfa/challenge'] button[type='submit']").click();
@@ -102,6 +89,64 @@ class MfaPlaywrightE2ETest extends MailIntegrationSupport {
 
             browser.close();
         }
+    }
+
+    @Test
+    void loginWithRecoveryCodeWhenAuthenticatorLost() {
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+
+            login(page);
+            enrollMfa(page);
+            String recoveryCode = page.locator(".mfa-recovery-list li code").first().innerText().trim();
+            assertThat(recoveryCode).isNotBlank();
+
+            page.locator("a[href*='home']").click();
+            page.waitForURL("**/home");
+
+            logout(page);
+            loginExpectingChallenge(page);
+
+            page.fill("form[action$='/auth/mfa/challenge'] #code", recoveryCode);
+            page.locator("form[action$='/auth/mfa/challenge'] button[type='submit']").click();
+            page.waitForURL("**/home");
+            assertThat(page.url()).endsWith("/home");
+
+            browser.close();
+        }
+    }
+
+    private void login(Page page) {
+        loginExpecting(page, "**/home");
+    }
+
+    private void loginExpectingChallenge(Page page) {
+        loginExpecting(page, "**/auth/mfa/challenge**");
+    }
+
+    private void loginExpecting(Page page, String urlPattern) {
+        page.navigate(baseUrl() + "/login");
+        page.fill("#username", username);
+        page.fill("#password", password);
+        page.locator("button[type='submit']").click();
+        page.waitForURL(urlPattern);
+    }
+
+    private String enrollMfa(Page page) {
+        page.navigate(baseUrl() + "/auth/mfa/setup");
+        page.waitForSelector(".mfa-secret code");
+        String secret = page.locator(".mfa-secret code").innerText().trim();
+        page.fill("form[action$='/auth/mfa/enable'] #code", totpMfaService.currentCodeForSecret(secret));
+        page.locator("form[action$='/auth/mfa/enable'] button[type='submit']").click();
+        page.waitForURL("**/auth/mfa/recovery-codes**");
+        assertThat(page.locator(".mfa-recovery-list li").count()).isGreaterThan(0);
+        return secret;
+    }
+
+    private void logout(Page page) {
+        page.locator("section.home-page form.inline-form button.btn-secondary").click();
+        page.waitForURL("**/login**");
     }
 
     private String baseUrl() {
