@@ -51,8 +51,11 @@ jobs:
           DB_USERNAME: Voyager
           DB_PASSWORD: testpass
         run: |
-          mvn -pl org-app exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps chromium"
-          mvn -pl org-app test -Pe2e -B
+          ./mvnw -pl org-app -am install -DskipTests -B
+          ./mvnw -f org-app/pom.xml -Pe2e exec:java -e \
+            -Dexec.mainClass=com.microsoft.playwright.CLI \
+            -Dexec.args="install --with-deps chromium"
+          ./mvnw -pl org-app -am test -Pe2e -B
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4

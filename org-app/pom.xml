@@ -123,6 +123,13 @@
                             <groups>e2e</groups>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
