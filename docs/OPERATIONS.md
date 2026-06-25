@@ -41,6 +41,9 @@ increase(auth_audit_events_total{event="RATE_LIMITED"}[1h])
 
 # 注册成功数
 increase(auth_audit_events_total{event="REGISTER"}[24h])
+
+# MFA 挑战失败（可能的凭证攻击）
+rate(auth_audit_events_total{event="MFA_CHALLENGE_FAILURE"}[5m])
 ```
 
 ### 2.3 审计表查询（`auth_audit_events`）
@@ -70,6 +73,7 @@ LIMIT 50;
 | 登录失败突增 | `rate(...LOGIN_FAILURE...)` > 基线 3σ | 暴力破解 |
 | 限流频繁 | `rate(...RATE_LIMITED...)` > 阈值 | 接口滥用 |
 | 账户锁定增多 | `increase(...ACCOUNT_LOCKED...)` | 攻击或凭证问题 |
+| MFA 挑战失败突增 | `rate(...MFA_CHALLENGE_FAILURE...)` > 基线 | TOTP/恢复码暴力尝试 |
 
 ## 3. 结构化审计日志
 
@@ -90,10 +94,45 @@ event=LOGIN_FAILURE subject=alice ip=203.0.113.1 detail=BadCredentials
 
 REST 认证接口仅保留 **`/api/v1/auth/**`**。旧路径 `/api/auth/**` 已移除，未映射请求返回 404。
 
-## 5. 质量门禁（CI）
+## 5. 生产环境变量（补充）
 
-`mvn verify` 包含：
+除 README 中的 `DB_*`、`MAIL_*`、`APP_BASE_URL`、`REDIS_HOST` 外，启用 MFA 与 secret 加密时需设置：
 
-- 全量单元/集成测试
-- JaCoCo 指令覆盖率 ≥ **75%**
-- SpotBugs 静态分析（Medium 及以上失败；Spring/JPA 常见误报见 `config/spotbugs-exclude.xml`）
+| 变量 | 说明 |
+|------|------|
+| `MFA_SECRET_ENCRYPTION_KEY` | Base64 编码的 32 字节 AES 密钥（prod 默认 `app.auth.mfa.secret-encryption.mode=local`） |
+| `MFA_KMS_KEY_ID` | 可选，逻辑 KMS 密钥 ID（审计/未来云 KMS 集成；默认 `org-auth-totp`） |
+
+生成示例：
+
+```bash
+openssl rand -base64 32
+```
+
+轮换密钥时需重新密封存量 TOTP secret（当前版本支持读取旧明文与 `v1:` 密封格式；跨密钥轮换需运维脚本，见 [SECURITY.md](SECURITY.md)）。
+
+## 6. 质量门禁（CI）
+
+GitHub Actions（`.github/workflows/ci.yml`）在 push/PR 时执行：
+
+| 步骤 | 说明 |
+|------|------|
+| `docker compose -f docker-compose.ci.yml up` | MySQL 8 + Redis 7（仅 CI） |
+| `./mvnw verify` | 单元 + 集成测试、JaCoCo、SpotBugs |
+| `./mvnw -pl org-app -am test -Pe2e` | Playwright E2E（Chromium） |
+| OWASP dependency-check | 独立 job，CVSS ≥ 7 失败 |
+| CodeQL | 每周 + PR 静态分析（`.github/workflows/codeql.yml`） |
+
+JaCoCo 聚合门禁（`org-coverage/pom.xml`，与 README 一致）：
+
+- 指令覆盖率 ≥ **80%**
+- 分支覆盖率 ≥ **65%**
+- SpotBugs：Medium 及以上失败（Spring/JPA 常见误报见 `config/spotbugs-exclude.xml`）
+
+报告路径：`org-coverage/target/site/jacoco-aggregate/index.html`
+
+本地 E2E：
+
+```bash
+.\mvnw.cmd -pl org-app -am test -Pe2e
+```

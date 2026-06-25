@@ -8,6 +8,7 @@ If database or SMTP credentials may have appeared in git history, local backups,
 2. **Rotate SMTP / app passwords** and OAuth client secrets.
 3. **Invalidate active sessions** if a session store compromise is suspected (`DELETE FROM SPRING_SESSION` in maintenance window).
 4. **Revoke OAuth tokens** at the identity provider and regenerate client secrets.
+5. **Rotate MFA encryption key** (`MFA_SECRET_ENCRYPTION_KEY`) only with a planned re-seal of `user_totp_credentials.secret` values; until re-sealed, keep the previous key available for decrypt or accept MFA re-enrollment for affected users.
 
 Never commit `application-dev.local.properties`, `.env`, or real passwords in SQL scripts. Use `your_password_here` placeholders in `scripts/create-database.sql`.
 
@@ -25,6 +26,7 @@ Never commit `application-dev.local.properties`, `.env`, or real passwords in SQ
 | CSP | Tight `default-src 'self'` (no unused CDN hosts) |
 | Swagger / OpenAPI | `springdoc.api-docs.enabled=false`, `springdoc.swagger-ui.enabled=false` (SecurityConfig also requires `ROLE_ADMIN` if re-enabled) |
 | Bootstrap admin | **Disabled in prod** (`@Profile("!prod")`); assign `ROLE_ADMIN` via SQL instead |
+| MFA secret encryption | `MFA_SECRET_ENCRYPTION_KEY` set (32-byte key, Base64); prod enables `local` mode by default |
 
 ## Account lockout
 
@@ -105,7 +107,7 @@ app.auth.mfa.enabled=true
 app.auth.mfa.issuer=Your App Name
 ```
 
-Users enroll at `/auth/mfa/setup` (QR code + 6-digit TOTP). After enrollment, login redirects to `/auth/mfa/challenge` until the session attribute `MFA_VERIFIED` is set. Secrets are stored in `user_totp_credentials` (Flyway V5); one-time recovery codes in `user_mfa_recovery_codes` (V6).
+Users enroll at `/auth/mfa/setup` (QR code + 6-digit TOTP). After enrollment, login redirects to `/auth/mfa/challenge` until the session attribute `MFA_VERIFIED` is set. Secrets are stored in `user_totp_credentials` (Flyway V5, column widened in V7 for encrypted payloads); one-time recovery codes in `user_mfa_recovery_codes` (V6).
 
 ```properties
 app.auth.mfa.enforce-for-roles=ROLE_ADMIN

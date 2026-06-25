@@ -43,9 +43,11 @@ com.skyline.org
 | `config` | SecurityFilterChain、限流 Filter、AuthProperties |
 | `controller` | Thymeleaf 页面 + REST API（v1） |
 | `dto` | 请求/响应模型 |
-| `entity` | 认证相关 JPA 实体（Token、LoginAttempt、AuthAuditEvent） |
+| `entity` | 认证相关 JPA 实体（Token、LoginAttempt、AuthAuditEvent、OAuthAccount、UserTotpCredential、UserMfaRecoveryCode） |
 | `event` | 域事件（验证/重置邮件） |
 | `lock` | 账户锁定策略 |
+| `mfa` | TOTP 注册/挑战、恢复码、`MfaEnforcementFilter` |
+| `mfa/crypto` | TOTP secret 静态加密（AES-256-GCM，可插拔 `KmsSecretEncryptionClient`） |
 | `ratelimit` | 可插拔限流后端（memory / redis） |
 | `repository` | 认证仓储 |
 | `schedule` | 定时清理过期数据 |
@@ -95,9 +97,27 @@ sequenceDiagram
 - 编排：`AvailabilityCheckService`（格式校验 + 可选 DB 查询 + Caffeine 负缓存）
 - 生产：`app.auth.check.enumeration-safe=true` 时不查库，仅返回格式有效
 
+### 3.4 MFA（TOTP）
+
+- 可选功能：`app.auth.mfa.enabled=true`；管理员等角色可强制注册（`enforce-for-roles`）
+- 流程：登录成功 →（未注册且强制角色）`/auth/mfa/setup` → 启用后展示恢复码 → 后续登录 `/auth/mfa/challenge`（TOTP 或一次性恢复码）
+- Session 标记：`MFA_VERIFIED`；`MfaEnforcementFilter` 拦截未验证会话
+- Secret 落库：`TotpSecretCryptoService` 密封存储（prod 默认 `local` 模式）；见 [SECURITY.md](SECURITY.md)
+
 ## 4. 数据与迁移
 
-- **Flyway**：`V1__init_auth_schema.sql`（用户/角色/Token/登录尝试）、`V2__spring_session.sql`、`V3__admin_and_oauth.sql`（管理员/OAuth 绑定）、`V4__auth_audit_log.sql`（安全审计落库）、`V5__user_totp_mfa.sql`（TOTP 凭据）
+- **Flyway**（`org-auth-core/src/main/resources/db/migration/`）：
+
+| 版本 | 文件 | 说明 |
+|------|------|------|
+| V1 | `V1__init_auth_schema.sql` | 用户、角色、验证/重置 Token、登录尝试 |
+| V2 | `V2__spring_session.sql` | Spring Session JDBC 表 |
+| V3 | `V3__admin_and_oauth.sql` | `ROLE_ADMIN` 种子、`oauth_accounts` |
+| V4 | `V4__auth_audit_log.sql` | `auth_audit_events` 审计落库 |
+| V5 | `V5__user_totp_mfa.sql` | `user_totp_credentials`（TOTP） |
+| V6 | `V6__mfa_recovery_codes.sql` | `user_mfa_recovery_codes`（一次性恢复码） |
+| V7 | `V7__widen_totp_secret_column.sql` | `secret` 列扩至 VARCHAR(512)（加密载荷） |
+
 - **JPA**：`ddl-auto=validate`，表结构以 Flyway 为准
 - **FlywayMigrationConfig**：在 JPA `EntityManagerFactory` 之前执行迁移（故 `spring.flyway.enabled=false`）
 
@@ -107,8 +127,10 @@ sequenceDiagram
 |---------|------|
 | `dev` | 本地开发，完整 check 枚举、内存限流 |
 | `test` | 集成测试，`TestAsyncConfig` 同步邮件 |
-| `prod` | 环境变量注入、enumeration-safe、forward headers；通过 profile group 自动激活 `redis` |
+| `prod` | 环境变量注入、enumeration-safe、MFA 强制 + secret 加密、forward headers；通过 profile group 自动激活 `redis` |
 | `redis` | 可选，`app.auth.rate-limit.backend=redis` |
+| `oauth2` | 可选 OAuth2 客户端（与 prod 等组合使用） |
+| `mfa` | 测试/演示用 MFA 开关（见 `application-mfa.properties`） |
 
 ## 6. 扩展点
 
@@ -118,6 +140,7 @@ sequenceDiagram
 | OAuth2 / JWT | 新增 `security` 配置链，保留现有 User 域 |
 | 自定义角色 | 扩展 `RoleService` + Security 表达式 |
 | 分布式限流 | 启用 `redis` profile（见 EXTENSION.md 语义说明） |
+| MFA | `app.auth.mfa.enabled=true`；生产见 `application-mfa.properties.example` |
 | 审计落库 | `app.auth.audit.persist=true`；表 `auth_audit_events`（见 V4 迁移） |
 
 详见 [EXTENSION.md](EXTENSION.md) 与 [SECURITY.md](SECURITY.md)。

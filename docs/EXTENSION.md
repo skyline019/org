@@ -59,6 +59,15 @@ spring.data.redis.host=${REDIS_HOST}
 
 > **语义**：`memory` 与 `redis` 后端均使用 **令牌桶**（Redis 通过 Lua 脚本实现），多实例部署时以 Redis 为准。
 
+## 启用 MFA（TOTP）
+
+1. 复制 `application-mfa.properties.example` 或在 prod 中确认 `app.auth.mfa.enabled=true`。
+2. 生产环境设置 `MFA_SECRET_ENCRYPTION_KEY`（`openssl rand -base64 32`）；dev 可用 `app.auth.mfa.secret-encryption.mode=none`。
+3. 强制角色（如管理员）配置 `app.auth.mfa.enforce-for-roles=ROLE_ADMIN`。
+4. 用户自助注册：`/auth/mfa/setup`；登录后 step-up：`/auth/mfa/challenge`（支持恢复码）。
+
+详见 [SECURITY.md](SECURITY.md) 与 [ARCHITECTURE.md](ARCHITECTURE.md) §3.4。
+
 ## 国际化
 
 - 文案键：`org-auth-web/src/main/resources/messages*.properties`（`auth.*` 业务消息、`page.*` 页面模板）

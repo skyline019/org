@@ -95,7 +95,7 @@ E2E（Playwright）需单独启用 profile：
 | `org-auth-starter` | Spring Boot 自动配置 |
 | `org-app` | 可运行应用与全部测试 |
 | `demo-business` | 嵌入示例（`/dashboard` + `OrgAuthSecurityCustomizer`） |
-| `org-coverage` | JaCoCo 聚合报告与 ≥80% 覆盖率门禁 |
+| `org-coverage` | JaCoCo 聚合报告与覆盖率门禁（指令 ≥80%、分支 ≥65%） |
 
 ## Maven 发布
 
@@ -131,6 +131,7 @@ export SPRING_PROFILES_ACTIVE=prod
 export DB_URL=jdbc:mysql://host:3306/org_auth
 export APP_BASE_URL=https://your-domain.com
 export REDIS_HOST=your-redis-host
+export MFA_SECRET_ENCRYPTION_KEY=$(openssl rand -base64 32)
 # prod 已默认通过 profile group 激活 redis 与 app.auth.rate-limit.backend=redis
 ```
 
