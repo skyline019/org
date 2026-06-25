@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{}, 'app')}">
+<head>
+    <title th:text="#{page.admin.title}">User management</title>
+</head>
+<body>
+<section th:fragment="content" class="home-page">
+    <div class="home-panel auth-panel auth-panel--app">
+        <header class="home-panel__header">
+            <h1 class="home-panel__title" th:text="#{page.admin.heading}">User management</h1>
+            <p class="home-panel__subtitle" th:text="#{page.admin.subtitle}">Manage accounts and roles</p>
+        </header>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th th:text="#{page.admin.col.username}">Username</th>
+                    <th th:text="#{page.admin.col.email}">Email</th>
+                    <th th:text="#{page.admin.col.status}">Status</th>
+                    <th th:text="#{page.admin.col.roles}">Roles</th>
+                    <th th:text="#{page.admin.col.actions}">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users.content}">
+                    <td th:text="${user.username()}">user</td>
+                    <td th:text="${user.email()}">email</td>
+                    <td>
+                        <span th:if="${user.enabled()}" class="badge badge--ok" th:text="#{page.admin.status.enabled}">Enabled</span>
+                        <span th:unless="${user.enabled()}" class="badge badge--warn" th:text="#{page.admin.status.disabled}">Disabled</span>
+                        <span th:if="${user.locked()}" class="badge badge--error" th:text="#{page.admin.status.locked}">Locked</span>
+                    </td>
+                    <td th:text="${#strings.listJoin(user.roles(), ', ')}">ROLE_USER</td>
+                    <td class="admin-actions">
+                        <form th:if="${!user.enabled()}" th:action="@{/admin/users/{id}/enable(id=${user.id()})}" method="post" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn-link" th:text="#{page.admin.action.enable}">Enable</button>
+                        </form>
+                        <form th:if="${user.enabled()}" th:action="@{/admin/users/{id}/disable(id=${user.id()})}" method="post" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn-link" th:text="#{page.admin.action.disable}">Disable</button>
+                        </form>
+                        <form th:if="${user.locked()}" th:action="@{/admin/users/{id}/unlock(id=${user.id()})}" method="post" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn-link" th:text="#{page.admin.action.unlock}">Unlock</button>
+                        </form>
+                        <form th:if="${!user.roles().contains('ROLE_ADMIN')}" th:action="@{/admin/users/{id}/grant-admin(id=${user.id()})}" method="post" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn-link" th:text="#{page.admin.action.grantAdmin}">Grant admin</button>
+                        </form>
+                        <form th:if="${user.roles().contains('ROLE_ADMIN')}" th:action="@{/admin/users/{id}/revoke-admin(id=${user.id()})}" method="post" class="inline-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn-link" th:text="#{page.admin.action.revokeAdmin}">Revoke admin</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="admin-pagination" th:if="${users.totalPages > 1}">
+            <a th:if="${users.hasPrevious()}" th:href="@{/admin/users(page=${users.number - 1})}" th:text="#{page.admin.pagination.prev}">Previous</a>
+            <span th:text="${users.number + 1} + ' / ' + ${users.totalPages}">1 / 1</span>
+            <a th:if="${users.hasNext()}" th:href="@{/admin/users(page=${users.number + 1})}" th:text="#{page.admin.pagination.next}">Next</a>
+        </nav>
+    </div>
+</section>
+</body>
+</html>

@@ -2,6 +2,7 @@ package com.skyline.org.autoconfigure;
 
 import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.auth.config.PasswordEncoderConfig;
+import com.skyline.org.auth.config.TrustedProxyProperties;
 import com.skyline.org.config.FlywayMigrationConfig;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,7 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @AutoConfiguration
-@EnableConfigurationProperties(AuthProperties.class)
+@EnableConfigurationProperties({AuthProperties.class, TrustedProxyProperties.class})
 @EntityScan(basePackages = {
         "com.skyline.org.user.entity",
         "com.skyline.org.auth.entity"

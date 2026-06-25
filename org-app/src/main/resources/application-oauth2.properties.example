@@ -1,0 +1,13 @@
+# OAuth2 login (optional). Enable with: spring.profiles.active=dev,oauth2
+app.auth.oauth2.enabled=true
+app.auth.oauth2.providers=github
+
+# GitHub example — replace with your OAuth App credentials
+spring.security.oauth2.client.registration.github.client-id=${OAUTH2_GITHUB_CLIENT_ID}
+spring.security.oauth2.client.registration.github.client-secret=${OAUTH2_GITHUB_CLIENT_SECRET}
+spring.security.oauth2.client.registration.github.scope=read:user,user:email
+
+# Google OIDC example
+# spring.security.oauth2.client.registration.google.client-id=${OAUTH2_GOOGLE_CLIENT_ID}
+# spring.security.oauth2.client.registration.google.client-secret=${OAUTH2_GOOGLE_CLIENT_SECRET}
+# spring.security.oauth2.client.registration.google.scope=openid,profile,email

@@ -30,6 +30,10 @@ public class RateLimitService {
         if ("/login".equals(path) && "POST".equalsIgnoreCase(method)) {
             return authProperties.getAuth().getRateLimit().getLoginPerMinute();
         }
+        if ((path.startsWith("/oauth2/") || path.startsWith("/login/oauth2/"))
+                && "GET".equalsIgnoreCase(method)) {
+            return authProperties.getAuth().getRateLimit().getLoginPerMinute();
+        }
         if (("/register".equals(path) || path.startsWith("/api/v1/auth/register"))
                 && "POST".equalsIgnoreCase(method)) {
             return authProperties.getAuth().getRateLimit().getRegisterPerMinute();
@@ -46,6 +50,9 @@ public class RateLimitService {
         }
         if (path.startsWith("/api/v1/auth/check/") && "GET".equalsIgnoreCase(method)) {
             return authProperties.getAuth().getRateLimit().getCheckPerMinute();
+        }
+        if (path.startsWith("/admin/") && "POST".equalsIgnoreCase(method)) {
+            return authProperties.getAuth().getRateLimit().getAdminPerMinute();
         }
         return null;
     }

@@ -29,18 +29,21 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
     private final AccountLockService accountLockService;
     private final AuthAuditService authAuditService;
     private final Messages messages;
+    private final ClientIpResolver clientIpResolver;
 
     public LoginFailureHandler(
             LoginAttemptService loginAttemptService,
             UserService userService,
             AccountLockService accountLockService,
             AuthAuditService authAuditService,
-            Messages messages) {
+            Messages messages,
+            ClientIpResolver clientIpResolver) {
         this.loginAttemptService = loginAttemptService;
         this.userService = userService;
         this.accountLockService = accountLockService;
         this.authAuditService = authAuditService;
         this.messages = messages;
+        this.clientIpResolver = clientIpResolver;
         setDefaultFailureUrl("/login?error");
     }
 
@@ -51,7 +54,7 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
             AuthenticationException exception) throws IOException, ServletException {
         AuthenticationException resolved = unwrap(exception);
         String username = request.getParameter("username");
-        String ip = ClientIpResolver.resolve(request);
+        String ip = clientIpResolver.resolve(request);
 
         if (shouldRecordFailedAttempt(resolved) && username != null && !username.isBlank()) {
             loginAttemptService.recordFailure(username, ip);

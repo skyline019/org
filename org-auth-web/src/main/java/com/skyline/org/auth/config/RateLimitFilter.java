@@ -28,23 +28,31 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final AuthAuditService authAuditService;
     private final Messages messages;
 
+    private final ClientIpResolver clientIpResolver;
+
     public RateLimitFilter(
             RateLimitService rateLimitService,
             AuthAuditService authAuditService,
-            Messages messages) {
+            Messages messages,
+            ClientIpResolver clientIpResolver) {
         this.rateLimitService = rateLimitService;
         this.authAuditService = authAuditService;
         this.messages = messages;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String path = request.getRequestURI();
-        String clientIp = ClientIpResolver.resolve(request);
+        String clientIp = clientIpResolver.resolve(request);
 
         if (!rateLimitService.tryConsume(path, request.getMethod(), clientIp)) {
             authAuditService.log(AuthEventType.RATE_LIMITED, null, clientIp, path);
+            if (prefersHtmlResponse(request)) {
+                response.sendRedirect(request.getContextPath() + "/login?rateLimited");
+                return;
+            }
             response.setStatus(429);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             ApiResponse<Void> body = ApiResponse.fail(ErrorCode.RATE_LIMIT_EXCEEDED.name(), messages.get("auth.rate-limit"));
@@ -52,5 +60,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         filterChain.doFilter(request, response);
+    }
+
+    private static boolean prefersHtmlResponse(HttpServletRequest request) {
+        if (request.getRequestURI().startsWith("/api/")) {
+            return false;
+        }
+        String accept = request.getHeader("Accept");
+        return accept != null && accept.contains("text/html");
     }
 }

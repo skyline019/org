@@ -9,5 +9,6 @@ public enum ErrorCode {
     TOKEN_EXPIRED,
     TOKEN_USED,
     RATE_LIMIT_EXCEEDED,
+    LAST_ADMIN,
     INTERNAL_ERROR
 }

@@ -98,6 +98,25 @@ public class UserService {
     }
 
     @Transactional
+    public User createOAuthUser(String username, String email, String passwordHash) {
+        if (userRepository.existsByUsername(username)) {
+            throw new BusinessException(ErrorCode.USERNAME_TAKEN, messages.get("auth.error.username-taken"));
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.EMAIL_TAKEN, messages.get("auth.error.email-taken"));
+        }
+        Role userRole = roleService.getDefaultUserRole();
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPasswordHash(passwordHash);
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        user.addRole(userRole);
+        return userRepository.save(user);
+    }
+
+    @Transactional
     public void save(User user) {
         userRepository.save(user);
     }

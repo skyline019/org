@@ -1,5 +1,6 @@
 package com.skyline.org.auth.controller;
 
+import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.auth.dto.ForgotPasswordRequest;
 import com.skyline.org.auth.dto.RegisterRequest;
 import com.skyline.org.auth.dto.ResetPasswordRequest;
@@ -9,6 +10,7 @@ import com.skyline.org.auth.service.RegistrationService;
 import com.skyline.org.common.i18n.Messages;
 import com.skyline.org.common.exception.BusinessException;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -26,28 +28,41 @@ public class AuthPageController {
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
     private final Messages messages;
+    private final AuthProperties authProperties;
 
     public AuthPageController(
             RegistrationService registrationService,
             EmailVerificationService emailVerificationService,
             PasswordResetService passwordResetService,
-            Messages messages) {
+            Messages messages,
+            AuthProperties authProperties) {
         this.registrationService = registrationService;
         this.emailVerificationService = emailVerificationService;
         this.passwordResetService = passwordResetService;
         this.messages = messages;
+        this.authProperties = authProperties;
     }
 
     @GetMapping("/login")
     public String login(
             @RequestParam(required = false) String error,
             @RequestParam(required = false) String logout,
+            @RequestParam(required = false) String rateLimited,
             Model model) {
         if (error != null && !model.containsAttribute("errorMessage")) {
             model.addAttribute("errorMessage", msg("auth.login.error"));
         }
         if (logout != null) {
             model.addAttribute("successMessage", msg("auth.login.logout"));
+        }
+        if (rateLimited != null) {
+            model.addAttribute("errorMessage", msg("auth.rate-limit"));
+        }
+        if (authProperties.getAuth().getOauth2().isEnabled()) {
+            java.util.List<String> providers = authProperties.getAuth().getOauth2().getProviders();
+            if (providers != null && !providers.isEmpty()) {
+                model.addAttribute("oauthProviders", providers);
+            }
         }
         return "auth/login";
     }

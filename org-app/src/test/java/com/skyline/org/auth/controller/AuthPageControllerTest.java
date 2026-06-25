@@ -1,5 +1,6 @@
 package com.skyline.org.auth.controller;
 
+import com.skyline.org.auth.config.AuthProperties;
 import com.skyline.org.auth.service.EmailVerificationService;
 import com.skyline.org.auth.service.PasswordResetService;
 import com.skyline.org.auth.service.RegistrationService;
@@ -27,6 +28,7 @@ class AuthPageControllerTest {
     @Mock PasswordResetService passwordResetService;
 
     MockMvc mockMvc;
+    AuthProperties authProperties = new AuthProperties();
 
     @BeforeEach
     void setUp() {
@@ -34,7 +36,8 @@ class AuthPageControllerTest {
         source.addMessage("auth.login.error", Locale.getDefault(), "error");
         Messages messages = new Messages(source);
         AuthPageController controller = new AuthPageController(
-                registrationService, emailVerificationService, passwordResetService, messages);
+                registrationService, emailVerificationService, passwordResetService, messages,
+                authProperties);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

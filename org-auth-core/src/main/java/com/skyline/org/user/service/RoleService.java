@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RoleService {
 
     public static final String DEFAULT_USER_ROLE = "ROLE_USER";
+    public static final String ADMIN_ROLE = "ROLE_ADMIN";
 
     private final RoleRepository roleRepository;
 
@@ -20,7 +21,13 @@ public class RoleService {
     @Transactional(readOnly = true)
     @Cacheable("roles")
     public Role getDefaultUserRole() {
-        return roleRepository.findByName(DEFAULT_USER_ROLE)
-                .orElseThrow(() -> new IllegalStateException(DEFAULT_USER_ROLE + " not found"));
+        return requireRole(DEFAULT_USER_ROLE);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "roles", key = "#name")
+    public Role requireRole(String name) {
+        return roleRepository.findByName(name)
+                .orElseThrow(() -> new IllegalStateException(name + " not found"));
     }
 }

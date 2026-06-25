@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
 
@@ -17,13 +18,16 @@ public class FlywayMigrationConfig {
     public static final String MIGRATION_BEAN_NAME = "databaseSchemaMigration";
 
     @Bean(name = MIGRATION_BEAN_NAME)
-    public Object databaseSchemaMigration(DataSource dataSource) {
-        Flyway.configure()
+    public Object databaseSchemaMigration(DataSource dataSource, Environment environment) {
+        Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
                 .baselineOnMigrate(true)
-                .load()
-                .migrate();
+                .load();
+        if (environment.getProperty("app.flyway.repair-on-migrate", Boolean.class, false)) {
+            flyway.repair();
+        }
+        flyway.migrate();
         return new Object();
     }
 

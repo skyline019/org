@@ -1,0 +1,141 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "com.skyline.org.auth.config.AuthProperties",
+      "description": "Application and auth module settings."
+    },
+    {
+      "name": "app.trusted-proxy",
+      "type": "com.skyline.org.auth.config.TrustedProxyProperties",
+      "description": "Trusted reverse-proxy settings for client IP resolution."
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.base-url",
+      "type": "java.lang.String",
+      "description": "Public base URL used in outbound links and redirects."
+    },
+    {
+      "name": "app.auth.login-success-url",
+      "type": "java.lang.String",
+      "description": "Post-login redirect path."
+    },
+    {
+      "name": "app.auth.lock.max-attempts",
+      "type": "java.lang.Integer",
+      "description": "Failed login attempts before account lockout."
+    },
+    {
+      "name": "app.auth.lock.duration",
+      "type": "java.time.Duration",
+      "description": "Account lockout duration."
+    },
+    {
+      "name": "app.auth.token.email-verification-expiry",
+      "type": "java.time.Duration",
+      "description": "Email verification token lifetime."
+    },
+    {
+      "name": "app.auth.token.password-reset-expiry",
+      "type": "java.time.Duration",
+      "description": "Password reset token lifetime."
+    },
+    {
+      "name": "app.auth.rate-limit.backend",
+      "type": "java.lang.String",
+      "description": "Rate limit storage backend: memory or redis."
+    },
+    {
+      "name": "app.auth.rate-limit.login-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Login attempts allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.rate-limit.register-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Registration attempts allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.rate-limit.reset-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Password reset attempts allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.rate-limit.check-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Availability check requests allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.rate-limit.resend-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Verification resend requests allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.rate-limit.admin-per-minute",
+      "type": "java.lang.Integer",
+      "description": "Admin POST requests allowed per client IP per minute."
+    },
+    {
+      "name": "app.auth.check.enumeration-safe",
+      "type": "java.lang.Boolean",
+      "description": "Avoid revealing whether usernames or emails exist."
+    },
+    {
+      "name": "app.auth.check.availability-cache-ttl",
+      "type": "java.time.Duration",
+      "description": "Cache TTL for username and email availability checks."
+    },
+    {
+      "name": "app.auth.oauth2.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable OAuth2 login providers."
+    },
+    {
+      "name": "app.auth.oauth2.providers",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Enabled OAuth2 provider registration IDs."
+    },
+    {
+      "name": "app.auth.bootstrap-admin.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Create an initial admin user on startup when no admin exists."
+    },
+    {
+      "name": "app.auth.bootstrap-admin.username",
+      "type": "java.lang.String",
+      "description": "Bootstrap admin username."
+    },
+    {
+      "name": "app.auth.bootstrap-admin.email",
+      "type": "java.lang.String",
+      "description": "Bootstrap admin email."
+    },
+    {
+      "name": "app.auth.bootstrap-admin.password",
+      "type": "java.lang.String",
+      "description": "Bootstrap admin password."
+    },
+    {
+      "name": "app.auth.maintenance.login-attempt-retention",
+      "type": "java.time.Duration",
+      "description": "Retention period for login attempt audit records."
+    },
+    {
+      "name": "app.auth.maintenance.expired-token-retention",
+      "type": "java.time.Duration",
+      "description": "Retention period for expired auth tokens."
+    },
+    {
+      "name": "app.trusted-proxy.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Trust X-Forwarded-For from configured proxy networks."
+    },
+    {
+      "name": "app.trusted-proxy.trusted-networks",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Proxy network prefixes allowed to supply forwarded headers."
+    }
+  ]
+}

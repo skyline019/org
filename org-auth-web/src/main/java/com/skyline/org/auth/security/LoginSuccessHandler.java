@@ -21,13 +21,17 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final AuthAuditService authAuditService;
     private final AuthProperties authProperties;
 
+    private final ClientIpResolver clientIpResolver;
+
     public LoginSuccessHandler(
             LoginAttemptService loginAttemptService,
             AuthAuditService authAuditService,
-            AuthProperties authProperties) {
+            AuthProperties authProperties,
+            ClientIpResolver clientIpResolver) {
         this.loginAttemptService = loginAttemptService;
         this.authAuditService = authAuditService;
         this.authProperties = authProperties;
+        this.clientIpResolver = clientIpResolver;
         setDefaultTargetUrl(authProperties.getAuth().getLoginSuccessUrl());
         setAlwaysUseDefaultTargetUrl(true);
     }
@@ -38,7 +42,7 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
             HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
         String username = authentication.getName();
-        String ip = ClientIpResolver.resolve(request);
+        String ip = clientIpResolver.resolve(request);
         loginAttemptService.recordSuccess(username, ip);
         authAuditService.log(AuthEventType.LOGIN_SUCCESS, username, ip, null);
         super.onAuthenticationSuccess(request, response, authentication);

@@ -5,6 +5,7 @@ import com.skyline.org.auth.audit.AuthEventType;
 import com.skyline.org.auth.lock.AccountLockService;
 import com.skyline.org.auth.service.LoginAttemptService;
 import com.skyline.org.common.i18n.Messages;
+import com.skyline.org.common.web.ClientIpResolver;
 import com.skyline.org.user.entity.User;
 import com.skyline.org.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +43,7 @@ class LoginFailureHandlerTest {
     @Mock UserService userService;
     @Mock AccountLockService accountLockService;
     @Mock AuthAuditService authAuditService;
+    @Mock ClientIpResolver clientIpResolver;
 
     LoginFailureHandler handler;
     MockHttpServletRequest request;
@@ -50,10 +52,11 @@ class LoginFailureHandlerTest {
     @BeforeEach
     void setUp() {
         handler = new LoginFailureHandler(
-                loginAttemptService, userService, accountLockService, authAuditService, messages());
+                loginAttemptService, userService, accountLockService, authAuditService, messages(), clientIpResolver);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         request.setParameter("username", "alice");
+        org.mockito.Mockito.when(clientIpResolver.resolve(org.mockito.ArgumentMatchers.any())).thenReturn("127.0.0.1");
         FlashMapManager flashMapManager = new SessionFlashMapManager();
         request.setAttribute(FlashMapManager.class.getName(), flashMapManager);
         request.setAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE, new FlashMap());

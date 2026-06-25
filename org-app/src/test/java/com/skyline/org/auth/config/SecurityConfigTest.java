@@ -43,6 +43,13 @@ class SecurityConfigTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void adminRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+    }
+
+    @Test
     void staticResourcesArePublic() throws Exception {
         mockMvc.perform(get("/css/auth.css")).andExpect(status().isOk());
     }

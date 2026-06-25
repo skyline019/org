@@ -15,6 +15,9 @@
 - OpenAPI / Swagger UI
 - Prometheus 指标（prod）
 - 完整测试 + JaCoCo 覆盖率 + GitHub Actions CI
+- 可选 OAuth2 社交登录（GitHub / Google OIDC）
+- 管理员用户控制台（`/admin/users`）
+- 生产安全基线：CSP 收紧、可信代理 IP、Redis 分布式限流（见 [docs/SECURITY.md](docs/SECURITY.md)）
 
 ## 前置条件
 
@@ -72,7 +75,7 @@ mysql -u root -p < scripts/create-test-database.sql
 .\mvnw.cmd verify
 ```
 
-JaCoCo 聚合报告：`org-coverage/target/site/jacoco-aggregate/index.html`（根目录 `verify` 要求 `com.skyline.org` 指令覆盖率 ≥ 70%，含 SpotBugs 静态分析；与 CI 一致）
+JaCoCo 聚合报告：`org-coverage/target/site/jacoco-aggregate/index.html`（根目录 `verify` 要求 `com.skyline.org` 指令覆盖率 ≥ 70%、分支覆盖率 ≥ 55%，含 SpotBugs 静态分析；与 CI 一致）
 
 ## 模块结构
 

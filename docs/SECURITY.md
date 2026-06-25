@@ -1,69 +1,103 @@
-# Org Auth — 安全说明
+# Security operations guide
 
-## 1. 威胁模型（简要）
+## Credential rotation
 
-| 威胁 | 控制措施 |
-|------|----------|
-| 暴力破解登录 | 账户锁定 + 登录限流 + 审计日志 |
-| 用户枚举 | prod `enumeration-safe`；找回密码静默响应 |
-| CSRF | 表单 CSRF Token；API check 只读 GET 豁免 |
-| Session 劫持 | HttpOnly Cookie、fixation 防护、JDBC Session |
-| Token 泄露 | 路径 Token + POST 确认；库内 SHA-256 哈希 |
-| 邮件链接泄露 | Referrer-Policy: no-referrer |
-| 接口滥用 | Bucket4j 限流（login/register/reset/resend/check） |
-| 密码弱 | BCrypt(12) + 强度校验 |
-| 横向扩展限流失效 | 可选 Redis 后端（`redis` profile） |
+If database or SMTP credentials may have appeared in git history, local backups, or shared configs:
 
-## 2. 已实施控制
+1. **Rotate MySQL password** for the application user and update `DB_PASSWORD` / `application-dev.local.properties`.
+2. **Rotate SMTP / app passwords** and OAuth client secrets.
+3. **Invalidate active sessions** if a session store compromise is suspected (`DELETE FROM SPRING_SESSION` in maintenance window).
+4. **Revoke OAuth tokens** at the identity provider and regenerate client secrets.
 
-### 认证与 Session
+Never commit `application-dev.local.properties`, `.env`, or real passwords in SQL scripts. Use `your_password_here` placeholders in `scripts/create-database.sql`.
 
-- BCrypt strength **12**
-- JDBC Session，Cookie：`http-only`、`same-site=lax`；prod 下 `secure=true`
-- 未验证邮箱：`DisabledException`，不计入失败次数
-- 已锁定：`LockedException`，显示剩余分钟数
+## Production checklist
 
-### Token 生命周期
+| Item | Configuration |
+|------|----------------|
+| User enumeration | `app.auth.check.enumeration-safe=true` |
+| Distributed rate limit | `spring.profiles.include=redis`, `app.auth.rate-limit.backend=redis` |
+| Trusted proxy IP | `app.trusted-proxy.enabled=true` behind nginx/ALB |
+| Forwarded headers | `server.forward-headers-strategy=framework` |
+| Secure session cookie | `server.servlet.session.cookie.secure=true` |
+| CSP | Tight `default-src 'self'` (no unused CDN hosts) |
+| Swagger / OpenAPI | `springdoc.api-docs.enabled=false`, `springdoc.swagger-ui.enabled=false` (SecurityConfig also requires `ROLE_ADMIN` if re-enabled) |
+| Bootstrap admin | **Disabled in prod** (`@Profile("!prod")`); assign `ROLE_ADMIN` via SQL instead |
 
-- 邮箱验证：默认 24h；密码重置：默认 30min
-- 发新 Token 时作废旧 Token（`invalidateActiveByUserId`）
-- 使用后标记 `used=true`
+## Account lockout
 
-### HTTP 安全头
+| Setting | Default |
+|---------|---------|
+| `app.auth.lock.max-attempts` | 5 |
+| `app.auth.lock.duration` | 15m |
 
-- CSP（允许 inline style 以支持 Thymeleaf）
-- X-Frame-Options: DENY
-- Referrer-Policy: no-referrer
+Lockout is per username. Expired locks auto-clear on next login attempt.
 
-### 审计
+## Rate limiting
 
-- Logger 名：`AUTH_AUDIT`
-- 事件：LOGIN_SUCCESS/FAILURE、REGISTER、EMAIL_VERIFIED、RESEND_VERIFICATION、PASSWORD_RESET_*、ACCOUNT_LOCKED、RATE_LIMITED
-- **Micrometer Counter**：`auth.audit.events`（标签 `event`），与日志双写，详见 [OPERATIONS.md](OPERATIONS.md)
+| Path | Default limit/min |
+|------|-------------------|
+| POST `/login` | 10 |
+| GET `/oauth2/**`, `/login/oauth2/**` | 10 (same as login) |
+| POST register / reset / resend | 5–5–3 |
+| GET check API | 30 |
+| POST `/admin/**` | 30 |
 
-## 3. dev 与 prod 差异
+Memory and Redis backends both use token-bucket semantics. HTML form posts receive a redirect to `/login?rateLimited`; API clients receive HTTP 429 JSON.
 
-| 项 | dev | prod |
-|----|-----|------|
-| check API 枚举 | 暴露占用状态 | 仅格式有效 |
-| Cookie Secure | false | true |
-| 错误详情 | 可见 | `include-message=never` |
-| Forward headers | 未启用 | `framework` |
-| Redis 健康检查 | 禁用 | 按需启用 |
-| 日志级别 | DEBUG（包） | WARN root |
+## Session policy
 
-## 4. 部署检查清单
+- Session fixation: `changeSessionId()`
+- Max concurrent sessions per user: **3** (oldest sessions invalidated)
 
-- [ ] `SPRING_PROFILES_ACTIVE=prod`
-- [ ] `APP_BASE_URL` 为外网 HTTPS 地址
-- [ ] 数据库与 SMTP 凭据来自环境变量
-- [ ] `app.auth.check.enumeration-safe=true`
-- [ ] 反向代理正确传递 `X-Forwarded-For` / `X-Forwarded-Proto`
-- [ ] 多实例时启用 `redis` profile 或接受单机限流
-- [ ] 配置 Prometheus / 日志采集监控 `AUTH_AUDIT` 与 `auth_audit_events_total`
+## CSRF
 
-## 5. 已知限制（非 bug）
+Enabled globally. Exempt: `GET /api/v1/auth/check/**` only.
 
-- 无 CAPTCHA / MFA / OAuth2（扩展见 EXTENSION.md）
-- 审计仅 SLF4J，未落库
-- dev 下 check API 可枚举用户名/邮箱（便于开发调试）
+## Trusted proxy
+
+When `app.trusted-proxy.enabled=false` (default dev), `X-Forwarded-For` is **ignored** and `remoteAddr` is used — clients cannot spoof IP for rate limiting.
+
+When `true`, forwarded headers are honored only if the direct TCP peer matches `app.trusted-proxy.trusted-networks` (defaults: loopback + RFC1918).
+
+## Bootstrap admin (non-production)
+
+Only active when profile is **not** `prod` and:
+
+```properties
+app.auth.bootstrap-admin.enabled=true
+app.auth.bootstrap-admin.username=admin
+app.auth.bootstrap-admin.email=admin@example.com
+app.auth.bootstrap-admin.password=<strong-password>
+```
+
+Disable after first boot. Prefer assigning `ROLE_ADMIN` via SQL in production.
+
+## OAuth2
+
+Enable optional social login:
+
+```properties
+spring.profiles.include=oauth2
+app.auth.oauth2.enabled=true
+```
+
+Copy `application-oauth2.properties.example` and set provider client IDs/secrets via environment variables.
+
+**Linking rules:**
+- Provider must return a verified email; synthetic `@oauth.local` addresses are not created.
+- OAuth links to an existing local account **only if** that account's email is already verified.
+- Unverified local registrations cannot be taken over via OAuth.
+- Disabled accounts cannot complete OAuth login.
+
+OAuth accounts are stored in `oauth_accounts`.
+
+## Admin console
+
+- URL: `/admin/users` (requires `ROLE_ADMIN`)
+- Cannot disable or revoke admin role from the **last** admin account
+- Admin POST actions are CSRF-protected and rate-limited
+
+## Audit
+
+Security events are written to logger **`AUTH_AUDIT`** and Micrometer counter `auth.audit.events`. They are **not** persisted to the database; forward logs to your SIEM in production.

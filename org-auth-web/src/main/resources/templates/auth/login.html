@@ -27,6 +27,16 @@
                 <button type="submit" class="btn btn-primary" th:text="#{page.login.submit}">Sign in</button>
             </form>
 
+            <div th:if="${oauthProviders != null and !oauthProviders.isEmpty()}" class="oauth-divider">
+                <span th:text="#{page.login.oauth.divider}">Or continue with</span>
+            </div>
+            <div th:if="${oauthProviders != null}" class="oauth-buttons">
+                <a th:each="provider : ${oauthProviders}"
+                   th:href="@{/oauth2/authorization/{id}(id=${provider})}"
+                   class="btn btn-oauth"
+                   th:text="#{page.login.oauth.provider(${provider})}">OAuth</a>
+            </div>
+
             <p class="auth-links">
                 <a th:href="@{/register}" th:text="#{page.login.register}">Create account</a>
                 <span class="auth-links__sep">|</span>

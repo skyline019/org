@@ -29,6 +29,16 @@ public class AuthProperties {
         private final RateLimit rateLimit = new RateLimit();
         private final Maintenance maintenance = new Maintenance();
         private final Check check = new Check();
+        private final OAuth2 oauth2 = new OAuth2();
+        private final BootstrapAdmin bootstrapAdmin = new BootstrapAdmin();
+
+        public OAuth2 getOauth2() {
+            return oauth2;
+        }
+
+        public BootstrapAdmin getBootstrapAdmin() {
+            return bootstrapAdmin;
+        }
 
         public Lock getLock() {
             return lock;
@@ -108,6 +118,7 @@ public class AuthProperties {
         private int resetPerMinute = 5;
         private int checkPerMinute = 30;
         private int resendPerMinute = 3;
+        private int adminPerMinute = 30;
 
         public String getBackend() {
             return backend;
@@ -156,6 +167,14 @@ public class AuthProperties {
         public void setResendPerMinute(int resendPerMinute) {
             this.resendPerMinute = resendPerMinute;
         }
+
+        public int getAdminPerMinute() {
+            return adminPerMinute;
+        }
+
+        public void setAdminPerMinute(int adminPerMinute) {
+            this.adminPerMinute = adminPerMinute;
+        }
     }
 
     public static class Check {
@@ -176,6 +195,66 @@ public class AuthProperties {
 
         public void setAvailabilityCacheTtl(Duration availabilityCacheTtl) {
             this.availabilityCacheTtl = availabilityCacheTtl;
+        }
+    }
+
+    public static class OAuth2 {
+        private boolean enabled = false;
+        private java.util.List<String> providers = new java.util.ArrayList<>();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public java.util.List<String> getProviders() {
+            return providers;
+        }
+
+        public void setProviders(java.util.List<String> providers) {
+            this.providers = providers;
+        }
+    }
+
+    public static class BootstrapAdmin {
+        private boolean enabled = false;
+        private String username = "admin";
+        private String email = "admin@example.com";
+        private String password;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
         }
     }
 
