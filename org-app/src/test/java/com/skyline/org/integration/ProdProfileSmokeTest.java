@@ -64,7 +64,8 @@ class ProdProfileSmokeTest extends RedisIntegrationSupport {
 
     @Test
     void loginPageIncludesHstsAndBaselineHeaders() throws Exception {
-        mockMvc.perform(get("/login"))
+        // Spring Security emits HSTS only on secure (HTTPS) responses
+        mockMvc.perform(get("/login").secure(true))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Strict-Transport-Security", "max-age=31536000; includeSubDomains"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
