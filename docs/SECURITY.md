@@ -50,7 +50,7 @@ Memory and Redis backends both use token-bucket semantics. HTML form posts recei
 ## Session policy
 
 - Session fixation: `changeSessionId()`
-- Concurrent sessions: max **3** per user (oldest evicted)
+- Concurrent sessions: max **3** per user (oldest evicted); enforced via `SpringSessionBackedSessionRegistry`
 - Idle timeout: **30 minutes** (`server.servlet.session.timeout=30m`)
 - Cookie: `HttpOnly`, `SameSite=Lax` (dev/test); `Secure` in prod
 

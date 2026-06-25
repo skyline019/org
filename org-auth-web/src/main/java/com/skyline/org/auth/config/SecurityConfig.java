@@ -11,8 +11,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import java.util.Arrays;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final ObjectProvider<List<OrgAuthSecurityCustomizer>> securityCustomizers;
     private final ObjectProvider<OrgOAuth2UserService> oauth2UserService;
     private final Environment environment;
+    private final SessionRegistry sessionRegistry;
 
     public SecurityConfig(
             CustomUserDetailsService userDetailsService,
@@ -37,7 +39,8 @@ public class SecurityConfig {
             RateLimitFilter rateLimitFilter,
             ObjectProvider<List<OrgAuthSecurityCustomizer>> securityCustomizers,
             ObjectProvider<OrgOAuth2UserService> oauth2UserService,
-            Environment environment) {
+            Environment environment,
+            SessionRegistry sessionRegistry) {
         this.userDetailsService = userDetailsService;
         this.loginSuccessHandler = loginSuccessHandler;
         this.loginFailureHandler = loginFailureHandler;
@@ -45,6 +48,7 @@ public class SecurityConfig {
         this.securityCustomizers = securityCustomizers;
         this.oauth2UserService = oauth2UserService;
         this.environment = environment;
+        this.sessionRegistry = sessionRegistry;
     }
 
     @Bean
@@ -106,6 +110,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionFixation(fixation -> fixation.changeSessionId())
                         .maximumSessions(3)
+                        .sessionRegistry(sessionRegistry)
                         .maxSessionsPreventsLogin(false)
                 )
                 .csrf(csrf -> csrf
@@ -125,7 +130,7 @@ public class SecurityConfig {
                                 .preload(false));
                     }
                 })
-                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(rateLimitFilter, SecurityContextHolderFilter.class);
 
         return http.build();
     }

@@ -143,6 +143,86 @@ class OAuthAccountServiceTest {
                 .isInstanceOf(OAuth2AuthenticationException.class);
     }
 
+    @Test
+    void returnsPrincipalForExistingLinkedAccount() {
+        OAuth2User providerUser = providerUser("linked@example.com", "sub-linked");
+        when(delegate.loadUser(any())).thenReturn(providerUser);
+
+        User linked = localUser("linked", "linked@example.com", true, true);
+        OAuthAccount existing = new OAuthAccount();
+        existing.setUser(linked);
+        when(oauthAccountRepository.findByProviderAndProviderUserId("github", "sub-linked"))
+                .thenReturn(Optional.of(existing));
+
+        OAuth2User principal = service.resolveOAuthUser(userRequest());
+
+        assertThat(principal.getName()).isEqualTo("linked");
+        verify(oauthAccountRepository, never()).save(any());
+    }
+
+    @Test
+    void createsUsernameFromProviderLoginAttribute() {
+        OAuth2User providerUser = new DefaultOAuth2User(
+                List.of(),
+                Map.of("email", "gh@example.com", "sub", "sub-gh", "login", "octocat"),
+                "sub");
+        when(delegate.loadUser(any())).thenReturn(providerUser);
+        when(oauthAccountRepository.findByProviderAndProviderUserId("github", "sub-gh"))
+                .thenReturn(Optional.empty());
+        when(userService.findByEmail("gh@example.com")).thenReturn(null);
+        when(userService.isUsernameAvailable("octocat")).thenReturn(true);
+        when(passwordEncoder.encode(anyString())).thenReturn("hash");
+
+        User created = localUser("octocat", "gh@example.com", true, true);
+        when(userService.createOAuthUser("octocat", "gh@example.com", "hash")).thenReturn(created);
+
+        OAuth2User principal = service.resolveOAuthUser(userRequest());
+
+        assertThat(principal.getName()).isEqualTo("octocat");
+        verify(userService).createOAuthUser("octocat", "gh@example.com", "hash");
+    }
+
+    @Test
+    void appendsSuffixWhenGeneratedUsernameIsTaken() {
+        OAuth2User providerUser = providerUser("fresh@example.com", "sub-6");
+        when(delegate.loadUser(any())).thenReturn(providerUser);
+        when(oauthAccountRepository.findByProviderAndProviderUserId("github", "sub-6"))
+                .thenReturn(Optional.empty());
+        when(userService.findByEmail("fresh@example.com")).thenReturn(null);
+        when(userService.isUsernameAvailable("fresh")).thenReturn(false);
+        when(userService.isUsernameAvailable("fresh1")).thenReturn(true);
+        when(passwordEncoder.encode(anyString())).thenReturn("hash");
+
+        User created = localUser("fresh1", "fresh@example.com", true, true);
+        when(userService.createOAuthUser("fresh1", "fresh@example.com", "hash")).thenReturn(created);
+
+        OAuth2User principal = service.resolveOAuthUser(userRequest());
+
+        assertThat(principal.getName()).isEqualTo("fresh1");
+    }
+
+    @Test
+    void resolvesProviderUserIdFromIdAttributeWhenSubMissing() {
+        OAuth2User providerUser = new DefaultOAuth2User(
+                List.of(),
+                Map.of("email", "id@example.com", "id", "provider-id-99"),
+                "id");
+        when(delegate.loadUser(any())).thenReturn(providerUser);
+        when(oauthAccountRepository.findByProviderAndProviderUserId("github", "provider-id-99"))
+                .thenReturn(Optional.empty());
+        when(userService.findByEmail("id@example.com")).thenReturn(null);
+        when(userService.isUsernameAvailable(anyString())).thenReturn(true);
+        when(passwordEncoder.encode(anyString())).thenReturn("hash");
+
+        User created = localUser("id", "id@example.com", true, true);
+        when(userService.createOAuthUser(anyString(), anyString(), anyString())).thenReturn(created);
+
+        service.resolveOAuthUser(userRequest());
+
+        verify(oauthAccountRepository).save(org.mockito.ArgumentMatchers.argThat(
+                account -> "provider-id-99".equals(account.getProviderUserId())));
+    }
+
     private static OAuth2UserRequest userRequest() {
         ClientRegistration registration = ClientRegistration.withRegistrationId("github")
                 .clientId("id")

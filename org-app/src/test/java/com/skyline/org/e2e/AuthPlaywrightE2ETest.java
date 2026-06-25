@@ -106,6 +106,34 @@ class AuthPlaywrightE2ETest extends MailIntegrationSupport {
         }
     }
 
+    @Test
+    void logoutReturnsToLoginPage() {
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            page.navigate(baseUrl() + "/login");
+            page.fill("#username", username);
+            page.fill("#password", password);
+            page.locator("button[type='submit']").click();
+            page.waitForURL("**/home");
+            page.locator("form[action*='logout'] button").click();
+            page.waitForURL("**/login?logout**");
+            assertThat(page.url()).contains("/login");
+            browser.close();
+        }
+    }
+
+    @Test
+    void forgotPasswordPageIsAccessible() {
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            page.navigate(baseUrl() + "/auth/forgot-password");
+            assertThat(page.locator("#email").isVisible()).isTrue();
+            browser.close();
+        }
+    }
+
     private String baseUrl() {
         return "http://localhost:" + port;
     }

@@ -54,4 +54,16 @@ class AuthPageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/register"));
     }
+
+    @Test
+    void loginPageIncludesOAuthProvidersWhenEnabled() throws Exception {
+        authProperties.getAuth().getOauth2().setEnabled(true);
+        authProperties.getAuth().getOauth2().setProviders(java.util.List.of("github", "google"));
+
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model()
+                        .attribute("oauthProviders", java.util.List.of("github", "google")));
+    }
 }
